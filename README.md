@@ -55,7 +55,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 ---
 
 ### 📉 Systematic Trading & Macro Modeling
-- **[Statistical Arbitrage – Cointegration-Based Mean Reversion](./STATARB-MEANREVERSION/01_cointegration_stat_arb.ipynb)**  
+- **[Statistical Arbitrage – Cointegration-Based Mean Reversion](.[/STATARB-MEANREVERSION/01_cointegration_stat_arb.ipynb])**  
   Developed a pair trading strategy using cointegration, z-score signals, and backtesting with Sharpe ratio and drawdown evaluation.
 
 
