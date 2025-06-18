@@ -54,6 +54,13 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 ---
 
+### 📉 Systematic Trading & Macro Modeling
+- **[Statistical Arbitrage – Cointegration-Based Mean Reversion](./STATARB-MEANREVERSION/01_cointegration_stat_arb.ipynb)**  
+  Developed a pair trading strategy using cointegration, z-score signals, and backtesting with Sharpe ratio and drawdown evaluation.
+
+
+---
+
 ## 🛠️ Tech Stack
 - **Languages**: Python (99.8%), SQL  
 - **Libraries**: NumPy, pandas, scikit-learn, statsmodels, yfinance, QuantLib, Plotly, Streamlit  
@@ -66,8 +73,9 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 **Bathaix Philippe-Emmanuel Yao**  
 📍 London, United Kingdom  
 📧 [yaophilippeemmanuel@gmail.com](mailto:yaophilippeemmanuel@gmail.com)  
-🔗 [LinkedIn](https://www.linkedin.com/in/philippeyao/) | 🧠 FRM Certfied| 📈 CFA L1 Candidate
+🔗 [LinkedIn](https://www.linkedin.com/in/philippeyao/) | 🧠 FRM Certified | 📈 CFA L1 Candidate
 
 ---
 
-> *This repository is actively maintained and extended with new research in volatility modeling, macro risk, and machine learning for asset pricing.*
+> *This repository is actively maintained and extended with new research in macro modeling, systematic alpha strategies, and machine learning for financial markets.*
+
