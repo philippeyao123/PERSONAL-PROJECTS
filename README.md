@@ -73,7 +73,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 **Bathaix Philippe-Emmanuel Yao**  
 📍 London, United Kingdom  
 📧 [yaophilippeemmanuel@gmail.com](mailto:yaophilippeemmanuel@gmail.com)  
-🔗 [LinkedIn]([https://www.linkedin.com/in/philippeyao/](https://www.linkedin.com/in/bathaix-philippe-emmanuel-yao-a302ab176/)) | 🧠 FRM Certified | 📈 CFA L1 Candidate
+🔗 [LinkedIn]([https://www.linkedin.com/in/bathaix-philippe-emmanuel-yao-a302ab176/]) | 🧠 FRM Certified | 📈 CFA L1 Candidate
 
 ---
 
