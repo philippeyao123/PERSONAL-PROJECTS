@@ -1,25 +1,42 @@
-# 🧠 PERSONAL PROJECTS
+#  PERSONAL PROJECTS
 
 Welcome to my portfolio of quantitative finance and data science projects. These projects were developed during my MSc in Financial Mathematics at the London School of Economics and my MSc in Data Science at the University of Essex. They demonstrate practical applications of statistical modeling, machine learning, and financial theory in real-world scenarios. Most were designed to support internship and job applications in quantitative research, trading, and risk management.
 
 ---
 
-## 📘 Project Index
+##  Project Index
 
-### 📉 Derivatives & Volatility
+###  Derivatives & Volatility
+
+- **[Heston Calibration with Smile Fitting](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Heston_Calibration_with_Smile_Fitting)**   
+  Calibrated the Heston stochastic volatility model to market smiles using the semi-analytical pricing formula.  
+  • Performed least squares minimization on implied volatilities.  
+  • Compared Heston model results to Black-Scholes and local volatility models.
+
+- **[FX Option Pricing – Garman-Kohlhagen, Local Volatility & Barrier Options](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/FX_Option_Pricing_GK_LocalVol_Barriers)**   
+  Priced FX options using the Garman-Kohlhagen framework extended with a Dupire local volatility surface.  
+  • Simulated price paths via Monte Carlo and priced FX barrier options using finite difference PDEs.  
+  • Analyzed FX volatility smiles and interest rate differentials.
+
+- **[FX Options Pricing with Bergomi Local–Stochastic Volatility](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Bergomi_Local_Volatility_FX)**   
+  Implemented a stochastic-local volatility model combining a Dupire surface with a Bergomi-type volatility factor.  
+  • Compared FX option prices under Garman–Kohlhagen, local volatility, and SLV models.  
+  • Demonstrated dynamic smile behavior and calibrated volatility surfaces.
 
 - **[Machine Learning for Option Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/MACHINE%20LEARNING%20FOR%20OPTION%20PRICING)**  
-  Implemented GBM, LSTM, and GRU models to approximate European call option prices using historical data. Assessed model performance across different moneyness levels.
+  Implemented GBM, LSTM, and GRU models to approximate European call option prices using historical data.  
+  • Assessed model performance across different moneyness levels.
 
-- **[Equity Implied Volatility](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/EQUITY%20IMPLIED%20VOLATILITY)** 🆕  
+- **[Equity Implied Volatility](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/EQUITY%20IMPLIED%20VOLATILITY)**   
   Constructed implied volatility surfaces from market data and examined smile/skew patterns across strikes and maturities.
 
 - **[Local Volatility Model](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/LOCAL%20VOLATILITY%20MODEL)** 🆕  
   Calibrated local volatility surfaces using Dupire’s PDE and compared model outputs to market-implied volatilities.
 
+
 ---
 
-### 📊 Portfolio & Market Microstructure
+###  Portfolio & Market Microstructure
 
 - **[Portfolio Optimization](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/PORTFOLIO%20OPTIMIZATION)**  
   Explored Mean-Variance, Black-Litterman, and Michaud Resampling for portfolio construction and allocation robustness.
@@ -32,7 +49,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 ---
 
-### 🛡️ Risk, Credit & Forecasting
+###  Risk, Credit & Forecasting
 
 - **[Credit Risk Modeling](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/CREDIT%20RISK%20MODELING)**  
   Modeled Probability of Default (PD) using logistic regression and tree-based models. Validated models using ROC, AUC, and K-S statistics.
@@ -45,28 +62,28 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 ---
 
-### 📐 Interest Rate Derivatives & American Options
+###  Interest Rate Derivatives & American Options
 
-- **[CMS Spread Options Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/CMS_Spread_Options_Pricing_Analytics)** 🆕  
+- **[CMS Spread Options Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/CMS_Spread_Options_Pricing_Analytics)**   
   Priced CMS spread options using a copula-based approach to model the joint distribution of swap rates.  
   • Applied Gaussian copulas and Monte Carlo simulations to model spread distributions and payoff profiles.
 
-- **[CMS Convexity & Option Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/CMS_Derivatives_Pricing_Analytics)** 🆕  
+- **[CMS Convexity & Option Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/CMS_Derivatives_Pricing_Analytics)**   
   Computed CMS convexity adjustments and priced CMS options.  
   • Incorporated convexity correction techniques for swap rates and analyzed option payoff sensitivity.
 
-- **[American Options Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/American_Options_Pricing_Analytics)** 🆕  
+- **[American Options Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/American_Options_Pricing_Analytics)**   
   Compared three valuation techniques for American-style derivatives:  
   • Binomial tree, Barone-Adesi & Whaley approximation, and Least-Squares Monte Carlo (LSMC).  
   • Assessed exercise boundary dynamics and early exercise premiums.
 
-- **[Hull-White One-Factor Model](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Hull_White_1F_Model)** 🆕  
+- **[Hull-White One-Factor Model](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Hull_White_1F_Model)**   
   Implemented the Hull & White one-factor interest rate model to price Bermudan swaptions.  
   • Applied PDE techniques and lattice models to analyze early exercise features and calibration results.
 
 ---
 
-### 🧠 Quantitative Research & Macro Modeling
+###  Quantitative Research & Macro Modeling
 
 - **[Quantitative Forecasting for High-Yield Bonds](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/QUANTITATIVE%20FORECASTING%20FOR%20HIGH-YIELD%20BONDS)**  
   Dissertation project comparing LSTM, GRU, and GBM for high-yield bond pricing and risk estimation.  
@@ -82,7 +99,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 ---
 
-### 📉 Systematic Trading Strategies
+###  Systematic Trading Strategies
 
 - **[Statistical Arbitrage – Cointegration-Based Mean Reversion](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/STASTICAL%20ARBITRAGE%20–%20COINTEGRATION%20BASED%20MEAN%20REVERSION)**  
   Developed a pair trading strategy using cointegration, z-score signals, and rolling window regressions.  
@@ -90,7 +107,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Languages**: Python (99.8%), SQL  
 - **Libraries**: NumPy, pandas, scikit-learn, statsmodels, yfinance, QuantLib, Plotly, Streamlit  
@@ -98,7 +115,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 ---
 
-## 📫 Contact
+##  Contact
 
 **Bathaix Philippe-Emmanuel Yao**  
 📍 London, United Kingdom  
