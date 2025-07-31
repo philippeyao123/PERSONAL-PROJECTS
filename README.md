@@ -104,7 +104,11 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 - **[Statistical Arbitrage – Cointegration-Based Mean Reversion](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/STASTICAL%20ARBITRAGE%20–%20COINTEGRATION%20BASED%20MEAN%20REVERSION)**  
   Developed a pair trading strategy using cointegration, z-score signals, and rolling window regressions.  
   • Evaluated performance using Sharpe Ratio, drawdown, and turnover metrics.
-
+- **[Volatility Arbitrage – Implied vs Realized Volatility ](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Volatility%20Arbitrage%20)**  
+  Simulated a volatility arbitrage strategy based on the spread between implied and realized volatility.
+  • Generated GBM price paths and computed rolling 30-day realized volatility.
+  • Modeled implied volatility as noisy RV and executed long/short variance trades based on a threshold.
+  • Calculated P&L from variance differences and visualized strategy dynamics.
 ---
 
 ##  Tech Stack
