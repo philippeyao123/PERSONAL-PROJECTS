@@ -22,7 +22,12 @@ Welcome to my portfolio of quantitative finance and data science projects. These
   Implemented a stochastic-local volatility model combining a Dupire surface with a Bergomi-type volatility factor.  
   • Compared FX option prices under Garman–Kohlhagen, local volatility, and SLV models.  
   • Demonstrated dynamic smile behavior and calibrated volatility surfaces.
-
+  
+- **[RL-Based Hedging of FX Barrier Options under Bergomi + Dupire Local Volatility](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/RL_Based_Hedging_of_FX_Barrier_Options_under_Bergomi_%2B_Dupire_Local_Volatility)** 
+  Used reinforcement learning to hedge barrier options under a hybrid stochastic-local volatility model.
+  • Simulated FX price paths under Bergomi + Dupire framework and trained agents using deep Q-networks.
+  • Evaluated hedge performance against traditional Delta and Vega hedging techniques.
+  
 - **[Machine Learning for Option Pricing](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/MACHINE%20LEARNING%20FOR%20OPTION%20PRICING)**  
   Implemented GBM, LSTM, and GRU models to approximate European call option prices using historical data.  
   • Assessed model performance across different moneyness levels.
@@ -46,6 +51,11 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 
 - **[Baraka Portfolio App](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/baraka-portfolio-app)**  
   Built a Streamlit dashboard for portfolio construction, visualization, and performance attribution using custom allocation logic.
+
+ - **[Alpha Research Notebook – Backtesting Framework](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Alpha%20Reserch)** 
+  Designed a modular backtesting platform to evaluate alpha factors and strategy P&L performance.
+  • Incorporated signal generation, position sizing, transaction costs, and rolling statistics.
+  • Applied to momentum and volatility-based strategies with dynamic portfolio rebalancing.
 
 ---
 
