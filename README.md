@@ -52,7 +52,7 @@ Welcome to my portfolio of quantitative finance and data science projects. These
 - **[Baraka Portfolio App](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/baraka-portfolio-app)**  
   Built a Streamlit dashboard for portfolio construction, visualization, and performance attribution using custom allocation logic.
 
- - **[Alpha Research Notebook – Backtesting Framework](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Alpha%20Reserch)** 
+ - **[Alpha Research Notebook – Backtesting Framework](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Alpha%20Research)** 
   Designed a modular backtesting platform to evaluate alpha factors and strategy P&L performance.
   • Incorporated signal generation, position sizing, transaction costs, and rolling statistics.
   • Applied to momentum and volatility-based strategies with dynamic portfolio rebalancing.
