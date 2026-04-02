@@ -57,7 +57,7 @@ visualisations.py        Publication-quality charts
 
 ---
 
-## Extension 1: Heston Stochastic Volatility
+## Heston Stochastic Volatility
 
 Replaces flat GBM volatility with per-asset Heston dynamics:
 
@@ -71,7 +71,7 @@ Each asset has its own Heston process with independent vol-of-vol and spot-vol c
 
 **Impact**: Heston prices at 96.12% vs GBM 98.03%. Stochastic vol generates fatter tails and higher knock-in (16.3% vs 14.7%), consistent with negative skew from rho_sv < 0.
 
-## Extension 2: Brownian Bridge Barrier Correction
+## Brownian Bridge Barrier Correction
 
 Discrete monitoring underestimates knock-in probability. The Brownian bridge gives exact conditional probability of breach between observations:
 
@@ -81,13 +81,13 @@ P(min S(t) < B | S(t1), S(t2)) = exp(-2 * log(S1/B) * log(S2/B) / (sigma^2 * dt)
 
 **Impact**: Continuous KI = 28.85% vs discrete 20.48%. Correction factor of **1.41x**. The discrete approximation underestimates knock-in by ~41%.
 
-## Extension 3: Term Structure of Rates and Dividends
+## Term Structure of Rates and Dividends
 
 Piecewise-linear interpolated curves replace flat assumptions. Time-dependent drift at each MC step. Includes EUR rate curve and asset-specific dividend curves.
 
 **Impact**: Term structure pricing at 98.87% vs flat 98.03%, reflecting lower average forward rate.
 
-## Extension 4: CVA (Credit Valuation Adjustment)
+## CVA (Credit Valuation Adjustment)
 
 Counterparty credit risk from CDS-implied hazard rates with EPE profile:
 
@@ -98,7 +98,7 @@ Counterparty credit risk from CDS-implied hazard rates with EPE profile:
 | BBB (100bps) | 29.2 |
 | BB (200bps) | 58.7 |
 
-## Extension 5: Streamlit Dashboard
+## Streamlit Dashboard
 
 ```bash
 streamlit run dashboard.py
