@@ -46,7 +46,7 @@ KVA dominates because SA-CCR capital requirements are significant for uncollater
 
 XCCY exposure is ~2x larger than single-currency IRS due to the notional exchange FX risk.
 
-## Extension 2: Wrong-Way Risk
+## Wrong-Way Risk
 
 Jointly simulates interest rates and counterparty hazard rates with correlation rho. When rho > 0, exposure increases precisely when the counterparty is more likely to default.
 
@@ -59,7 +59,7 @@ Jointly simulates interest rates and counterparty hazard rates with correlation 
 
 The effect is moderate for IRS but becomes significant for EM XCCY swaps and credit-linked products.
 
-## Extension 3: Netting & CSA
+## Netting & CSA
 
 Quantifies the exposure reduction from netting multiple trades and posting collateral under a CSA.
 
@@ -72,7 +72,7 @@ Quantifies the exposure reduction from netting multiple trades and posting colla
 
 Netting alone reduces CVA by 64%. Adding a zero-threshold CSA with 10-day MPOR reduces CVA by 96%.
 
-## Extension 4: XVA Greeks & P&L Explain
+## XVA Greeks & P&L Explain
 
 Daily risk sensitivities and P&L attribution:
 
