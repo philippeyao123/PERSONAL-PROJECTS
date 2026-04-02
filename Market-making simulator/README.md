@@ -42,7 +42,7 @@ The MM quotes bid/ask, captures spread, and manages inventory risk. Mid-price fo
 
 ---
 
-## Extension 1: Multi-Asset Market-Making
+## Multi-Asset Market-Making
 
 Quotes 2+ correlated assets with portfolio-level inventory risk management:
 
@@ -52,7 +52,7 @@ r_i = s_i - gamma * sum_j(Cov_{ij} * q_j) * tau
 
 Cross-asset hedging via covariance-adjusted reservation prices. When inventory in asset A is long and A is correlated with B, the quoter automatically skews B quotes to reduce portfolio-level risk.
 
-## Extension 2: Adverse Selection & Flow Toxicity
+## Adverse Selection & Flow Toxicity
 
 Real-time VPIN (Volume-synchronized PIN) estimation with dynamic spread adjustment:
 
@@ -63,7 +63,7 @@ Real-time VPIN (Volume-synchronized PIN) estimation with dynamic spread adjustme
 
 The MM detects information events via order flow imbalance and widens spreads by 75% during toxic periods. Implements the Easley-O'Hara PIN model for theoretical grounding.
 
-## Extension 3: Optimal Execution (Almgren-Chriss)
+## Optimal Execution (Almgren-Chriss)
 
 When the MM must unwind a large position, three strategies are compared:
 
@@ -75,7 +75,7 @@ When the MM must unwind a large position, three strategies are compared:
 
 Almgren-Chriss trades higher expected cost for 15% lower tail risk. Risk aversion sensitivity shows the front-loading trade-off: lambda=0.001 front-loads 61% in the first quarter.
 
-## Extension 4: Reinforcement Learning Quoter
+## Reinforcement Learning Quoter
 
 Q-learning agent discovers optimal quoting policy:
 
