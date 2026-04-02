@@ -34,7 +34,7 @@ KVA dominates because SA-CCR capital requirements are significant for uncollater
 
 ---
 
-## Extension 1: Multi-Asset XVA (Cross-Currency Swap)
+## Multi-Asset XVA (Cross-Currency Swap)
 
 3-factor model: correlated Hull-White rates (EUR + USD) + GBM FX rate. The XCCY swap has notional exchange at maturity, creating FX-driven exposure that dominates near maturity.
 
