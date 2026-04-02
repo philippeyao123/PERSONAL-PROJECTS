@@ -108,9 +108,9 @@ Daily risk sensitivities and P&L attribution:
 
 ## Desk Relevance
 
-- **UBS XVA/SIMM**: CVA, FVA, SIMM, Capital pricing and optimization
-- **GS FICCS Strats**: Post-trade analytics, exposure modelling, netting optimization
-- **JPM MRM**: Model validation for exposure, XVA, and capital models
+- **XVA/SIMM**: CVA, FVA, SIMM, Capital pricing and optimization
+- **FICCS Strats**: Post-trade analytics, exposure modelling, netting optimization
+- **MRM**: Model validation for exposure, XVA, and capital models
 - **Any desk strat**: Understanding the full cost of a trade
 
 ## Technical Stack
