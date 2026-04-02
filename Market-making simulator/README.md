@@ -111,10 +111,10 @@ Training: 500 episodes, converges in ~200. Evaluation: $130K mean P&L, Sharpe 85
 
 ## Desk Relevance
 
-- **Market Making (Mako, Optiver, Jane Street)**: Core competency, AS model, inventory management
+- **Market Making**: Core competency, AS model, inventory management
 - **Systematic Trading**: Order flow analysis, regime detection, RL-based strategies
 - **Risk Management**: Inventory risk, adverse selection, flow toxicity monitoring
-- **Execution (Buy-side)**: TWAP/VWAP/AC benchmarking, implementation shortfall
+- **Execution**: TWAP/VWAP/AC benchmarking, implementation shortfall
 
 ## Technical Stack
 
