@@ -94,9 +94,9 @@ CVA scales approximately linearly with CDS spread. FVA scales linearly with fund
 
 ## Desk Relevance
 
-- **UBS XVA/SIMM**: Exactly the role described — CVA, FVA, SIMM, Capital pricing
-- **GS FICCS Strats**: Post-trade analytics, exposure modelling, capital optimisation
-- **JPM MRM**: Model risk for exposure and XVA models
+- **XVA/SIMM**: CVA, FVA, SIMM, Capital pricing
+- **FICCS Strats**: Post-trade analytics, exposure modelling, capital optimisation
+- **MRM**: Model risk for exposure and XVA models
 - **Any desk strat**: Understanding the true cost of a trade beyond mid-market pricing
 
 ## Technical Stack
