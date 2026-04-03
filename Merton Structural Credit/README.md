@@ -29,21 +29,20 @@ Calibrate (V, σ_V) from observed (E, σ_E), then derive Distance to Default, PD
 
 ---
 
-## Extensions
 
-### 1. KMV / EDF Mapping
+## 1. KMV / EDF Mapping
 Maps Distance to Default to Expected Default Frequency using empirical (fat-tailed) distribution rather than Normal. Actual defaults are 2-3x higher than Normal-implied for DD > 2.
 
-### 2. Black-Cox First-Passage
+## 2. Black-Cox First-Passage
 Default at the first time V hits the barrier, not just at maturity. Black-Cox PDs are 2-3x Merton PDs because default can occur at any time.
 
-### 3. CreditGrades (Goldman/JPM)
+## 3. CreditGrades (Goldman/JPM)
 Stochastic default barrier with recovery uncertainty. Produces more realistic short-tenor CDS spreads where Merton gives near-zero.
 
-### 4. CDS Calibration
+## 4. CDS Calibration
 Solves for firm volatility that matches observed market CDS spreads. All 6 firms calibrated to within 0.1 bps of target.
 
-### 5. Portfolio Credit Risk (Gaussian Copula)
+## 5. Portfolio Credit Risk (Gaussian Copula)
 Correlated defaults via Basel II IRB framework. Shows how asset correlation amplifies tail losses:
 
 | Correlation | VaR 99% | CVaR 99% |
@@ -90,7 +89,7 @@ Includes Vasicek analytical formula for regulatory capital.
 ## Desk Relevance
 
 - **Credit Trading**: CDS pricing, relative value, basis trading
-- **Credit Risk (BBVA, JPM MRM)**: PD models, rating migration, portfolio credit VaR
+- **Credit Risk**: PD models, rating migration, portfolio credit VaR
 - **Model Validation**: Comparing structural vs reduced-form, model risk
 - **Counterparty Risk / XVA**: Links directly to CVA engine (hazard rates from Merton)
 
