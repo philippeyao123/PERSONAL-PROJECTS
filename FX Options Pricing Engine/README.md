@@ -32,7 +32,7 @@ The Bergomi LSV price is lower because stochastic vol increases tail risk and kn
 
 ---
 
-## Extension 1: SABR Smile Calibration
+## SABR Smile Calibration
 
 SABR (Hagan 2002) with β=0.5 calibrated to synthetic FX smile:
 
@@ -42,7 +42,7 @@ dF = α·F^β·dW₁,  dα = ν·α·dW₂,  corr = ρ
 
 Calibration fits (α, ρ, ν) at each maturity. Negative ρ produces the put skew characteristic of FX markets.
 
-## Extension 2: Exotic FX Options
+## Exotic FX Options
 
 Products traded by FX exotic desks:
 
@@ -55,11 +55,11 @@ Products traded by FX exotic desks:
 
 Window barrier premium over full-life barrier: 0.004 (cheaper because barrier is active for shorter period).
 
-## Extension 3: RL Hedging
+## RL Hedging
 
 Q-learning agent with 11 continuous hedge ratios (0.0 to 1.0) and rich 7-dimensional state vector. Compared to BS delta and no hedge on a down-and-out barrier call under LSV dynamics.
 
-## Extension 4: Risk Reversal & Butterfly
+## Risk Reversal & Butterfly
 
 FX-specific smile conventions:
 
