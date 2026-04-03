@@ -89,7 +89,7 @@ Includes Vasicek analytical formula for regulatory capital.
 ## Desk Relevance
 
 - **Credit Trading**: CDS pricing, relative value, basis trading
-- **Credit Risk (BBVA, JPM MRM)**: PD models, rating migration, portfolio credit VaR
+- **Credit Risk**: PD models, rating migration, portfolio credit VaR
 - **Model Validation**: Comparing structural vs reduced-form, model risk
 - **Counterparty Risk / XVA**: Links directly to CVA engine (hazard rates from Merton)
 
