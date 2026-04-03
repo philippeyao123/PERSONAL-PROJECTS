@@ -34,7 +34,7 @@ Alpha (+8.0% pa) dominates factor contributions. Portfolio is near market-neutra
 
 ---
 
-## Extension 1: Stress Testing & Crisis Scenarios
+## Stress Testing & Crisis Scenarios
 
 Replay of 6 historical crises with pod-level P&L impact:
 
@@ -49,7 +49,7 @@ Replay of 6 historical crises with pod-level P&L impact:
 
 Includes reverse stress testing: finds the mildest market conditions that breach a given loss threshold.
 
-## Extension 2: Dynamic Regime-Aware Allocation
+## Dynamic Regime-Aware Allocation
 
 Detects vol/correlation regimes (risk-on, risk-off, crisis) and adjusts weights:
 
@@ -57,7 +57,7 @@ Detects vol/correlation regimes (risk-on, risk-off, crisis) and adjusts weights:
 - **Risk-off**: Reduce high-vol pods, lower portfolio vol target
 - **Crisis**: Minimum allocation, favour low-beta strategies
 
-## Extension 3: Transaction Costs & Slippage
+## Transaction Costs & Slippage
 
 Models 5 cost components: commission, spread, market impact, slippage, financing.
 
@@ -71,7 +71,7 @@ Models 5 cost components: commission, spread, market impact, slippage, financing
 
 Includes breakeven analysis: Stat Arb has only 1.7bps margin above breakeven, making it fragile to cost increases.
 
-## Extension 4: Liquidity Risk
+## Liquidity Risk
 
 Three liquidation scenarios (normal, stress, fire sale) plus crowding and LVaR:
 
