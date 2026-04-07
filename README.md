@@ -1,114 +1,184 @@
-# PERSONAL PROJECTS — Quantitative Finance
+# Quantitative Finance — Personal Projects
 
-This repository presents a **curated portfolio of quantitative finance projects** developed during my  
-**MSc in Financial Mathematics (London School of Economics)** and **MSc in Data Science (University of Essex)**.
-
-The projects focus on **derivatives pricing, volatility modeling, systematic trading, and risk analytics**, with an emphasis on:
-- market intuition and desk relevance  
-- model selection and trade-offs  
-- calibration to market data  
-- hedging and PnL thinking  
-- production-oriented mindset  
+> **Bathaix Philippe-Emmanuel Yao**  
+> MSc Financial Mathematics · London School of Economics (First-Class, 2026)  
+> MSc Data Science · University of Essex (First-Class) · FRM Candidate  
+> 📍 London · [LinkedIn](https://www.linkedin.com/) · yaophilippeemmanuel@gmail.com
 
 ---
 
-## 🔑 Selected Desk-Relevant Projects (Start Here)
+This repository contains a curated portfolio of quantitative finance projects developed across my graduate studies. The work spans **derivatives pricing**, **volatility modelling**, **systematic trading**, **risk analytics**, and **market microstructure**, with a consistent focus on:
 
-If you review only **three projects**, start with these:
-
-### 1️⃣ Heston Calibration with Smile Fitting  
-**Focus:** Volatility modeling · Calibration · Model risk  
-- Calibrated the Heston stochastic volatility model to market implied volatility smiles  
-- Least-squares optimization on implied volatilities  
-- Benchmarked against Black–Scholes and Local Volatility models  
-
-**Relevant for:** Equity / FX Vol desks, Quantitative Analytics, Model Validation
+- Model selection, calibration trade-offs, and hedging intuition
+- Market relevance and desk applicability
+- Production-oriented code and clean numerical implementation
 
 ---
 
-### 2️⃣ FX Options Pricing – Garman-Kohlhagen, Local Volatility & Barrier Options  
-**Focus:** FX exotics · Local Vol · PDE & Monte Carlo  
-- FX option pricing under the Garman–Kohlhagen framework  
-- Dupire Local Volatility surface construction  
-- Monte Carlo simulation and finite-difference PDE pricing of barrier options  
-- Analysis of volatility smiles and interest-rate differentials  
+## 🔑 Recommended Starting Points
 
-**Relevant for:** FX desks, Exotics, Structuring, Quant Research
+> If you review only a selection of projects, start here.
 
----
-
-### 3️⃣ CMS Spread Options Pricing  
-**Focus:** Rates derivatives · Copulas · Monte Carlo  
-- Pricing of CMS spread options using Gaussian copulas  
-- Monte Carlo simulation of joint swap rate dynamics  
-- Analysis of spread distributions and payoff sensitivities  
-
-**Relevant for:** Rates desks, Structuring, Quantitative Analytics
+| Project | Core Focus | Relevant Desks |
+|---|---|---|
+| [Heston Calibration with Smile Fitting](#heston-calibration-with-smile-fitting) | Stochastic vol · Calibration · Model risk | Equity/FX Vol, Quant Analytics |
+| [FX Options Pricing Engine](#fx-options-pricing-engine) | Exotics · Local Vol · PDE & Monte Carlo | FX Desks, Structuring, QR |
+| [XVA Pricing Engine – IR Swaps](#xva-pricing-engine--interest-rate-swaps) | CVA/DVA · Counterparty risk · Exposure | CVA Desk, Rates, Risk |
+| [Autocallable Pricer](#autocallable-pricer) | Structured products · Path-dependency · Greeks | Equity Exotics, Structuring |
+| [Market-Making Simulator](#market-making-simulator) | Microstructure · Inventory risk · Spread | Electronic Trading, HFT |
 
 ---
 
-## 📂 Full Project Index
+## 📂 Project Index
 
-### Derivatives & Volatility
-- **Heston Calibration with Smile Fitting**
-- **FX Option Pricing – Garman-Kohlhagen, Local Volatility & Barrier Options**
-- FX Options Pricing with Bergomi Local–Stochastic Volatility  
-- RL-Based Hedging of FX Barrier Options (Bergomi + Dupire)  
-- Machine Learning for Option Pricing  
-- Equity Implied Volatility  
-- Local Volatility Model (Dupire)
+### Derivatives & Volatility Modelling
 
----
+#### Heston Calibration with Smile Fitting
+Calibrated the Heston stochastic volatility model to market-implied vol surfaces using least-squares optimisation on implied vols. Benchmarked against Black–Scholes and Local Volatility. Analysis of parameter stability and smile dynamics.  
+`SV model · Calibration · Model risk`
 
-### Systematic Trading Strategies
-- **Statistical Arbitrage – Cointegration-Based Mean Reversion**  
-  - Pair trading using cointegration tests and z-score signals  
-  - Performance analysis via Sharpe ratio, drawdown, and turnover  
-- Volatility Arbitrage – Implied vs Realized Volatility  
+#### FX Options Pricing Engine
+Full FX option pricing stack: Garman–Kohlhagen analytical pricing, Dupire Local Volatility surface construction, Monte Carlo and finite-difference PDE pricing of barrier options. Analysis of vol smiles and interest-rate differential effects.  
+`GK · Local Vol · Dupire · Barrier options · PDE · Monte Carlo`
 
----
+#### FX Options Pricing with Bergomi Local–Stochastic Volatility
+Extension of the FX pricer to a Bergomi LSV framework. Forward variance dynamics, mixing and leverage function calibration.  
+`LSV · Bergomi · Forward variance`
 
-### Portfolio & Market Microstructure
-- Portfolio Optimization (Mean-Variance, Black–Litterman, Michaud Resampling)  
-- High-Frequency Trading Analysis (order flow, spreads, microstructure signals)  
-- Baraka Portfolio App (Streamlit-based portfolio analytics dashboard)  
-- Alpha Research Notebook – Modular Backtesting Framework  
+#### RL-Based Hedging of FX Barrier Options (Bergomi + Dupire)
+Reinforcement learning agent trained to dynamically hedge FX barrier options in a Bergomi/Dupire simulation environment. Comparison against delta-hedging benchmarks under transaction costs.  
+`RL · Dynamic hedging · Transaction costs`
 
----
+#### Autocallable Pricer
+Pricing engine for autocallable structured products. Path-dependent payoff modelling, Monte Carlo with early-termination logic, Greeks computation via finite differences and AAD-inspired approaches.  
+`Autocallables · Path-dependency · Structured products · Greeks`
 
-### Interest Rate Derivatives & American Options
-- CMS Convexity & Option Pricing  
-- American Options Pricing (Binomial Tree, Barone-Adesi & Whaley, LSMC)  
-- Hull–White One-Factor Model (Bermudan Swaptions)
+#### Local Volatility Model (Dupire)
+Standalone Dupire Local Vol surface construction from market option prices. Arbitrage-free interpolation, surface smoothing, and forward vol dynamics analysis.  
+`Dupire · Local Vol surface · Arbitrage-free interpolation`
 
----
+#### Machine Learning for Option Pricing
+Neural network approximation of option prices and Greeks. Benchmarked against analytical and Monte Carlo baselines. Sensitivity to training data distribution and model architecture.  
+`Neural networks · Option pricing · Greeks approximation`
 
-### Risk, Credit & Forecasting  
-*(Supporting academic and risk-focused projects)*  
-- Credit Risk Modeling (PD, ROC, AUC, KS)  
-- Risk Forecasting (VaR, ES, GARCH, EVT)  
-- Risk Management Simulation  
+#### Equity Implied Volatility
+Implied vol extraction from equity option chains. Term structure and skew analysis. Interpolation methods and calendar spread arbitrage detection.  
+`Implied vol · Skew · Term structure`
 
----
+#### CMS Derivatives Pricing
+CMS convexity adjustment pricing. Replication-based and model-based approaches.  
+`CMS · Convexity adjustment · Rates`
 
-### Quantitative Research & Macro Modeling  
-*(Exploratory and research-driven)*  
-- Quantitative Forecasting for High-Yield Bonds (LSTM, GRU, GBM)  
-- Sentiment Analysis on Financial News  
-- Stochastic Processes & Monte Carlo Simulations  
+#### CMS Spread Options Pricing
+Pricing of CMS spread options via Gaussian copulas and Monte Carlo simulation of joint swap rate dynamics. Spread distribution and payoff sensitivity analysis.  
+`CMS spread · Copula · Monte Carlo`
 
 ---
 
-## 🛠 Tech Stack
-- **Languages:** Python (≈100%), SQL  
-- **Libraries:** NumPy, pandas, scikit-learn, statsmodels, QuantLib, Plotly, Streamlit  
-- **Tools:** Jupyter Notebook, Git, GitHub Actions  
+### Interest Rate Derivatives
+
+#### Hull–White One-Factor Model
+Calibration of the Hull–White model to the yield curve. Bermudan swaption pricing via PDE and Monte Carlo with LSM early exercise.  
+`Hull-White · Bermudan swaptions · Yield curve calibration`
+
+#### American Option Pricing
+Comparison of binomial tree, Barone-Adesi & Whaley approximation, and Longstaff–Schwartz Monte Carlo (LSMC) for American option pricing.  
+`American options · LSMC · Binomial tree · BAW`
 
 ---
 
-## 📬 Contact
-**Bathaix Philippe-Emmanuel Yao**  
-📍 London, United Kingdom  
-📧 yaophilippeemmanuel@gmail.com  
-🔗 LinkedIn  
-🧠 FRM Level I Cleared | 📈 CFA Level I Candidate
+### Systematic Trading
+
+#### Statistical Arbitrage – Cointegration-Based Mean Reversion
+Pair selection via Engle–Granger and Johansen cointegration tests. Z-score entry/exit signals. Full backtest with Sharpe ratio, drawdown, and turnover analysis.  
+`Stat arb · Pairs trading · Cointegration · Backtesting`
+
+#### Volatility Arbitrage – Implied vs Realised Volatility
+Strategy exploiting the implied–realised vol spread. Systematic entry via vol surface mispricing, delta-hedged gamma positions, P&L attribution.  
+`Vol arb · Gamma trading · Hedging`
+
+#### Multi-Strategy Portfolio Backtester
+Modular backtesting framework combining multiple systematic strategies. Portfolio-level risk aggregation, strategy weighting, and performance attribution.  
+`Backtesting · Portfolio construction · Risk aggregation`
+
+#### Alpha Research Notebook – Modular Backtesting Framework
+Research-oriented alpha generation and signal testing framework. Modular design for rapid strategy iteration.  
+`Signal research · Alpha generation · Modular backtesting`
+
+---
+
+### Market Microstructure & Execution
+
+#### Market-Making Simulator
+Simulation of a market-maker under inventory risk and adverse selection. Optimal bid–ask spread dynamics (Avellaneda–Stoikov framework), inventory management, and P&L analysis across different flow environments.  
+`Market making · Inventory risk · Avellaneda-Stoikov · Microstructure`
+
+#### High-Frequency Trading Analysis
+Order flow analysis, spread decomposition, microstructure signals, and toxicity metrics from tick data.  
+`HFT · Order flow · VPIN · Microstructure`
+
+---
+
+### Risk, Credit & XVA
+
+#### XVA Pricing Engine – Interest Rate Swaps
+End-to-end XVA framework for vanilla IR swaps: CVA, DVA, and FVA computation. Exposure simulation under Hull–White dynamics, wrong-way risk analysis, and netting set aggregation.  
+`CVA · DVA · FVA · Counterparty risk · IR swaps · Wrong-way risk`
+
+#### Merton Structural Credit Model
+Firm-value model for credit risk. Distance-to-default estimation, PD extraction, and comparison against empirical default rates.  
+`Merton model · Distance-to-default · Structural credit`
+
+#### Credit Risk Modelling
+Logistic regression and ML-based PD models. ROC/AUC/KS performance metrics.  
+`PD modelling · Scorecard · Classification`
+
+#### Risk Forecasting (VaR, ES, GARCH, EVT)
+Historical, parametric, and GARCH-based VaR/ES estimation. Extreme Value Theory for tail risk. Backtesting via Kupiec and Christoffersen tests.  
+`VaR · ES · GARCH · EVT · Backtesting`
+
+---
+
+### Macro & Quantitative Research
+
+#### Quantitative Forecasting for High-Yield Bonds
+LSTM, GRU, and gradient boosting models for HY bond return forecasting. Feature engineering from macro and market data. MSc dissertation project.  
+`LSTM · GRU · GBM · Bond forecasting · NLP`
+
+#### Sentiment Analysis on Financial News
+NLP pipeline for financial news sentiment extraction and signal construction. Correlation with equity returns.  
+`NLP · Sentiment · Text mining`
+
+#### Portfolio Optimization
+Mean-variance, Black–Litterman, and Michaud resampling frameworks. Efficient frontier construction and allocation sensitivity analysis.  
+`Mean-variance · Black-Litterman · Resampling · Allocation`
+
+#### Stochastic Processes & Monte Carlo Simulations
+GBM, Heston, Vasicek, and CIR process simulation. Variance reduction techniques: antithetic variates, control variates, importance sampling.  
+`Monte Carlo · Variance reduction · Stochastic processes`
+
+#### Baraka Portfolio App
+Streamlit-based portfolio analytics dashboard. Interactive risk and return metrics, allocation visualisation.  
+`Streamlit · Dashboard · Portfolio analytics`
+
+---
+
+## 🛠 Technical Stack
+
+| Category | Tools |
+|---|---|
+| **Languages** | Python, SQL, R, C++ (basic) |
+| **Quant Libraries** | QuantLib, NumPy, SciPy, pandas, statsmodels |
+| **ML/DL** | scikit-learn, PyTorch, TensorFlow |
+| **Visualisation** | Plotly, Matplotlib, Streamlit |
+| **Infrastructure** | Jupyter, Git, GitHub Actions |
+
+---
+
+## 📄 Notes
+
+All projects were developed independently for research and learning purposes. Pricing models are implemented from first principles where possible. Market data used for calibration is sourced from public APIs (Bloomberg snapshots, CBOE, QuantLib datasets).
+
+---
+
+*Last updated: April 2026*
