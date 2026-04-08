@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Baraka Portfolio Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--card:#161b22;--card-hover:#1c2129;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--dim:#484f58;
+  --green:#3fb950;--green-bg:rgba(63,185,80,.1);
+  --red:#f85149;--red-bg:rgba(248,81,73,.1);
+  --gold:#d29922;--gold-bg:rgba(210,153,34,.1);
+  --purple:#bc8cff;--purple-bg:rgba(188,140,255,.1);
+  --blue:#58a6ff;--blue-bg:rgba(88,166,255,.1);
+  --cyan:#39d5ff;--cyan-bg:rgba(57,213,255,.1);
+  --orange:#f0883e;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* NAV */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.topbar .logo{display:flex;align-items:center;gap:10px}
+.topbar .logo-icon{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.topbar .logo-text{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;letter-spacing:-.02em}
+.topbar .logo-sub{font-size:11px;color:var(--muted);margin-left:8px}
+.topbar .status{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.status-badge{background:var(--green-bg);color:var(--green);padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;border:1px solid rgba(63,185,80,.2)}
+
+/* LAYOUT */
+.container{max-width:1400px;margin:0 auto;padding:24px 32px 48px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:900px){.grid-2,.grid-3,.grid-5{grid-template-columns:1fr}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px;transition:border-color .2s}
+.card:hover{border-color:var(--dim)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.card-title{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+.card-subtitle{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* KPI */
+.kpi{text-align:center;padding:20px 16px}
+.kpi .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.kpi .value{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;line-height:1.1}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi.green .value{color:var(--green)}
+.kpi.red .value{color:var(--red)}
+.kpi.gold .value{color:var(--gold)}
+.kpi.blue .value{color:var(--blue)}
+.kpi.purple .value{color:var(--purple)}
+.kpi.cyan .value{color:var(--cyan)}
+
+/* SECTION TITLE */
+.section-alert{background:linear-gradient(135deg,rgba(88,166,255,.06),rgba(188,140,255,.04));border:1px solid rgba(88,166,255,.15);border-radius:8px;padding:20px 28px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px}
+.section-alert .icon{font-size:22px}
+.section-alert h2{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;letter-spacing:.02em;color:var(--blue)}
+.section-alert p{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.7;max-width:900px}
+.section-gap{margin-top:28px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:12px}
+thead th{text-align:left;padding:10px 14px;color:var(--muted);font-weight:500;font-size:10px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+tbody td{padding:10px 14px;border-bottom:1px solid rgba(48,54,61,.4)}
+tbody tr:hover{background:var(--card-hover)}
+.ticker-name{font-weight:600;color:var(--text)}
+.ticker-class{font-size:10px;color:var(--muted)}
+
+/* BARS */
+.bar-wrap{display:flex;align-items:center;gap:10px}
+.bar-bg{flex:1;height:8px;background:rgba(48,54,61,.5);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.bar-label{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;min-width:50px;text-align:right}
+
+/* PROGRESS BARS (vertical gauge style) */
+.gauge-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(48,54,61,.3)}
+.gauge-row:last-child{border-bottom:none}
+.gauge-name{font-size:13px;font-weight:500}
+.gauge-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.gauge-score{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700}
+.gauge-bar{flex:1;margin:0 16px;height:6px;background:rgba(48,54,61,.5);border-radius:3px;overflow:hidden;max-width:300px}
+.gauge-bar .fill{height:100%;border-radius:3px}
+
+/* SCENARIO CARDS */
+.scenario{padding:20px;border-bottom:1px solid rgba(48,54,61,.3);display:flex;align-items:flex-start;gap:18px}
+.scenario:last-child{border-bottom:none}
+.scenario .pct{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;min-width:80px}
+.scenario h4{font-size:14px;font-weight:600;margin-bottom:4px}
+.scenario p{font-size:12px;color:var(--muted);line-height:1.6}
+.scenario .impact{font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:6px;font-weight:500}
+
+/* CHART */
+.chart-area{position:relative;height:220px;margin-top:12px}
+.chart-area canvas{width:100%!important;height:100%!important}
+
+/* FOOTER */
+.footer{text-align:center;padding:24px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;border-top:1px solid var(--border);margin-top:40px}
+.footer a{color:var(--muted);text-decoration:none}
+
+/* FLOW CARDS */
+.flow-card{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(48,54,61,.3)}
+.flow-card:last-child{border-bottom:none}
+.flow-left h4{font-size:13px;font-weight:600}
+.flow-left p{font-size:11px;color:var(--muted)}
+.flow-right{text-align:right;font-family:'JetBrains Mono',monospace}
+.flow-right .main{font-size:14px;font-weight:700}
+.flow-right .sub{font-size:10px;color:var(--muted)}
+
+/* ANIM */
+.fade-up{opacity:0;transform:translateY(20px);animation:fadeUp .6s forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}.d5{animation-delay:.5s}.d6{animation-delay:.6s}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">B</div>
+    <span class="logo-text">BARAKA PORTFOLIO TERMINAL</span>
+    <span class="logo-sub">Multi-Asset Optimizer · Michaud Resampling</span>
+  </div>
+  <div class="status">
+    <span class="status-badge"><span class="status-dot" style="display:inline-block;width:6px;height:6px;margin-right:4px;vertical-align:middle"></span> OPTIMIZED</span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ALERT -->
+<div class="section-alert fade-up">
+  <span class="icon">⚡</span>
+  <div>
+    <h2>PORTFOLIO OPTIMIZED · MICHAUD RESAMPLING (500 ITERATIONS)</h2>
+    <p>Multi-asset allocation across US Equity, International, Bonds, and Alternatives. Minimum return constraint 6%. Benchmark: 40/30/30 strategic allocation. Optimization targets maximum Sharpe under resampled uncertainty. Current allocation overweights alternatives (+5.2pp vs benchmark) and underweights bonds (−3.1pp).</p>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid-5 fade-up d1">
+  <div class="card kpi green"><div class="label">Annual Return</div><div class="value">8.7%</div><div class="sub">vs 6.2% benchmark</div></div>
+  <div class="card kpi gold"><div class="label">Volatility</div><div class="value">11.3%</div><div class="sub">annualized</div></div>
+  <div class="card kpi blue"><div class="label">Sharpe Ratio</div><div class="value">0.59</div><div class="sub">rf = 2%</div></div>
+  <div class="card kpi red"><div class="label">Max Drawdown</div><div class="value">-14.2%</div><div class="sub">peak-to-trough</div></div>
+  <div class="card kpi purple"><div class="label">Sortino Ratio</div><div class="value">0.81</div><div class="sub">downside risk adjusted</div></div>
+</div>
+
+<!-- ROW 1: Allocation + Asset Class -->
+<div class="grid-2 section-gap fade-up d2">
+
+  <!-- Allocation Table -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Optimized Allocation</span>
+      <span class="card-subtitle">Weight · Return · Risk contribution</span>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>ETF</th><th>Weight</th><th>Ann. Return</th><th>Contribution</th><th>Allocation</th></tr></thead>
+      <tbody>
+        <tr><td><span class="ticker-name">SPY</span><br><span class="ticker-class">US Equity</span></td><td>12.8%</td><td style="color:var(--green)">+10.2%</td><td>1.3%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:64%;background:var(--green)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">IEFA</span><br><span class="ticker-class">International</span></td><td>11.4%</td><td style="color:var(--green)">+5.8%</td><td>0.7%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:57%;background:var(--blue)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">GOLD</span><br><span class="ticker-class">Alternatives</span></td><td>14.6%</td><td style="color:var(--green)">+12.1%</td><td>1.8%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:73%;background:var(--gold)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">IEF</span><br><span class="ticker-class">Bonds</span></td><td>13.2%</td><td style="color:var(--green)">+2.1%</td><td>0.3%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:66%;background:var(--cyan)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">VWO</span><br><span class="ticker-class">International</span></td><td>8.7%</td><td style="color:var(--green)">+4.3%</td><td>0.4%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:44%;background:var(--blue)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">BTC</span><br><span class="ticker-class">Alternatives</span></td><td>6.1%</td><td style="color:var(--green)">+42.5%</td><td>2.6%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:31%;background:var(--orange)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">XIC.TO</span><br><span class="ticker-class">International</span></td><td>7.2%</td><td style="color:var(--green)">+6.9%</td><td>0.5%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:36%;background:var(--blue)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">IFRA</span><br><span class="ticker-class">Alternatives</span></td><td>9.8%</td><td style="color:var(--green)">+7.4%</td><td>0.7%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:49%;background:var(--purple)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">SHV</span><br><span class="ticker-class">Bonds</span></td><td>8.4%</td><td style="color:var(--green)">+4.8%</td><td>0.4%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:42%;background:var(--cyan)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">VNQ</span><br><span class="ticker-class">Alternatives</span></td><td>4.3%</td><td style="color:var(--red)">-2.1%</td><td>-0.1%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:22%;background:var(--red)"></div></div></div></td></tr>
+        <tr><td><span class="ticker-name">Others</span><br><span class="ticker-class">XLU · XLP · EWJ · XCB · HEDGE</span></td><td>3.5%</td><td style="color:var(--muted)">+3.4%</td><td>0.1%</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:18%;background:var(--dim)"></div></div></div></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- Asset Class Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Asset Class Breakdown</span>
+      <span class="card-subtitle">Optimized vs Benchmark</span>
+    </div>
+    <div style="padding:8px 0">
+      <div class="gauge-row">
+        <div style="min-width:130px"><div class="gauge-name">US Equity</div><div class="gauge-sub">SPY · XLU · XLP</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:62%;background:var(--green)"></div></div>
+        <span class="gauge-score" style="color:var(--green)">18.4%</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:130px"><div class="gauge-name">International</div><div class="gauge-sub">IEFA · XIC · EWJ · VWO</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:72%;background:var(--blue)"></div></div>
+        <span class="gauge-score" style="color:var(--blue)">27.3%</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:130px"><div class="gauge-name">Bonds</div><div class="gauge-sub">IEF · SHV · XCB</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:58%;background:var(--cyan)"></div></div>
+        <span class="gauge-score" style="color:var(--cyan)">22.8%</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:130px"><div class="gauge-name">Alternatives</div><div class="gauge-sub">GOLD · IFRA · VNQ · BTC · HEDGE</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:82%;background:var(--purple)"></div></div>
+        <span class="gauge-score" style="color:var(--purple)">31.5%</span>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+      <div class="card-header" style="margin-bottom:12px"><span class="card-title">Benchmark Delta</span><span class="card-subtitle">Active tilts vs 40/30/30</span></div>
+      <div class="flow-card">
+        <div class="flow-left"><h4>US Equity</h4><p>Below benchmark</p></div>
+        <div class="flow-right"><div class="main" style="color:var(--red)">−5.6pp</div><div class="sub">24.0% bench</div></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-left"><h4>International</h4><p>Above benchmark</p></div>
+        <div class="flow-right"><div class="main" style="color:var(--green)">+3.3pp</div><div class="sub">24.0% bench</div></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-left"><h4>Bonds</h4><p>Below benchmark</p></div>
+        <div class="flow-right"><div class="main" style="color:var(--red)">−7.2pp</div><div class="sub">30.0% bench</div></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-left"><h4>Alternatives</h4><p>Above benchmark</p></div>
+        <div class="flow-right"><div class="main" style="color:var(--green)">+9.5pp</div><div class="sub">22.0% bench</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ROW 2: Cumulative Returns Chart + Stress Tests -->
+<div class="grid-2 section-gap fade-up d3">
+
+  <!-- Cumulative Returns -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Cumulative Returns</span>
+      <span class="card-subtitle">Optimized vs Benchmark · 2022–2024</span>
+    </div>
+    <div class="chart-area"><canvas id="cumChart"></canvas></div>
+  </div>
+
+  <!-- Stress Tests -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Stress Scenarios</span>
+      <span class="card-subtitle">Portfolio impact under historical shocks</span>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--red)">−18.4%</div>
+      <div>
+        <h4>2008-Style Crash</h4>
+        <p>US equity −30%, international −25%, bonds flat, gold +8%. Full risk-off with flight to quality.</p>
+        <div class="impact" style="color:var(--red)">→ Portfolio loss $184K on $1M · Recovery: 14 months</div>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--red)">−12.7%</div>
+      <div>
+        <h4>COVID-Style Crisis</h4>
+        <p>Global −20% except gold. V-shaped recovery. Bonds act as buffer. Crypto crashes 40%.</p>
+        <div class="impact" style="color:var(--gold)">→ Portfolio loss $127K · Recovery: 5 months</div>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--gold)">−6.8%</div>
+      <div>
+        <h4>Rate Hike Shock</h4>
+        <p>Bonds −10%, duration impact on IEF. Equities resilient. Gold flat. Infrastructure benefits.</p>
+        <div class="impact" style="color:var(--green)">→ Moderate impact · Alternatives hedge partially offsets</div>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--red)">−22.1%</div>
+      <div>
+        <h4>Stagflation</h4>
+        <p>Equities −15%, bonds −12%, only gold and commodities positive. Worst case for 60/40.</p>
+        <div class="impact" style="color:var(--red)">→ Severe loss · Gold allocation provides partial hedge</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ROW 3: Monte Carlo + Risk Metrics -->
+<div class="grid-2 section-gap fade-up d4">
+
+  <!-- Monte Carlo -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Monte Carlo Simulation</span>
+      <span class="card-subtitle">10,000 paths · 1-year horizon</span>
+    </div>
+    <div class="chart-area"><canvas id="mcChart"></canvas></div>
+    <div class="grid-3" style="margin-top:16px;gap:8px">
+      <div style="text-align:center"><div class="mono" style="font-size:10px;color:var(--muted);letter-spacing:.06em">5TH PERCENTILE</div><div class="mono" style="font-size:18px;color:var(--red);font-weight:700;margin-top:4px">−8.3%</div></div>
+      <div style="text-align:center"><div class="mono" style="font-size:10px;color:var(--muted);letter-spacing:.06em">MEDIAN</div><div class="mono" style="font-size:18px;color:var(--green);font-weight:700;margin-top:4px">+7.9%</div></div>
+      <div style="text-align:center"><div class="mono" style="font-size:10px;color:var(--muted);letter-spacing:.06em">95TH PERCENTILE</div><div class="mono" style="font-size:18px;color:var(--green);font-weight:700;margin-top:4px">+26.4%</div></div>
+    </div>
+  </div>
+
+  <!-- Risk Metrics -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Risk Metrics</span>
+      <span class="card-subtitle">Tail risk · Diversification · Factor exposure</span>
+    </div>
+    <div style="padding:4px 0">
+      <div class="gauge-row">
+        <div style="min-width:180px"><div class="gauge-name">VaR 95% (daily)</div><div class="gauge-sub">Worst daily loss at 95% confidence</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:45%;background:var(--red)"></div></div>
+        <span class="gauge-score" style="color:var(--red)">−1.52%</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:180px"><div class="gauge-name">CVaR 95% (daily)</div><div class="gauge-sub">Expected loss beyond VaR</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:58%;background:var(--red)"></div></div>
+        <span class="gauge-score" style="color:var(--red)">−2.31%</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:180px"><div class="gauge-name">Diversification Ratio</div><div class="gauge-sub">Weighted vol / portfolio vol</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:72%;background:var(--green)"></div></div>
+        <span class="gauge-score" style="color:var(--green)">1.84x</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:180px"><div class="gauge-name">Beta to SPY</div><div class="gauge-sub">Market sensitivity</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:48%;background:var(--blue)"></div></div>
+        <span class="gauge-score" style="color:var(--blue)">0.48</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:180px"><div class="gauge-name">Tracking Error</div><div class="gauge-sub">Active risk vs benchmark</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:38%;background:var(--gold)"></div></div>
+        <span class="gauge-score" style="color:var(--gold)">4.7%</span>
+      </div>
+      <div class="gauge-row">
+        <div style="min-width:180px"><div class="gauge-name">Excess Return</div><div class="gauge-sub">Alpha over benchmark</div></div>
+        <div class="gauge-bar"><div class="fill" style="width:55%;background:var(--green)"></div></div>
+        <span class="gauge-score" style="color:var(--green)">+2.5%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  ⚠ Simulated data for portfolio demonstration. Not financial advice. · <a href="https://github.com/philippeyao123/PERSONAL-PROJECTS" target="_blank">github.com/philippeyao123/PERSONAL-PROJECTS</a>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Clock
+function updateClock(){var d=new Date();document.getElementById('clock').textContent=d.toLocaleDateString('en-GB',{month:'short',day:'numeric',year:'numeric'})+', '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+setInterval(updateClock,1000);updateClock();
+
+// Chart defaults
+Chart.defaults.color='#8b949e';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=10;
+
+// Generate cumulative returns data
+var months=['Jan 22','Apr 22','Jul 22','Oct 22','Jan 23','Apr 23','Jul 23','Oct 23','Jan 24'];
+var opt=[1,0.96,0.91,0.88,0.93,0.98,1.04,1.07,1.13];
+var bench=[1,0.94,0.88,0.84,0.89,0.92,0.97,0.99,1.04];
+
+new Chart(document.getElementById('cumChart'),{
+  type:'line',
+  data:{
+    labels:months,
+    datasets:[
+      {label:'Optimized',data:opt,borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,.08)',fill:true,borderWidth:2,pointRadius:0,tension:.3},
+      {label:'Benchmark',data:bench,borderColor:'#484f58',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,borderDash:[4,3],tension:.3}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,pointStyle:'line',padding:16,font:{size:10}}}},
+    scales:{
+      x:{grid:{color:'rgba(48,54,61,.3)'},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(48,54,61,.3)'},ticks:{callback:function(v){return((v-1)*100).toFixed(0)+'%'},font:{size:9}}}
+    }
+  }
+});
+
+// Monte Carlo fan chart
+var mcLabels=[];for(var i=0;i<=12;i++)mcLabels.push('M+'+i);
+var p5=[],p25=[],p50=[],p75=[],p95=[];
+for(var i=0;i<=12;i++){
+  var t=i/12;
+  p5.push(1+(-0.083-0.02*Math.sqrt(t))*t*12/12);
+  p25.push(1+(0.03)*t*12/12);
+  p50.push(1+(0.079)*t*12/12);
+  p75.push(1+(0.14)*t*12/12);
+  p95.push(1+(0.264+0.01*Math.sqrt(t))*t*12/12);
+}
+new Chart(document.getElementById('mcChart'),{
+  type:'line',
+  data:{
+    labels:mcLabels,
+    datasets:[
+      {label:'95th',data:p95,borderColor:'rgba(63,185,80,.4)',backgroundColor:'rgba(63,185,80,.06)',fill:'+1',borderWidth:1,pointRadius:0,tension:.3},
+      {label:'75th',data:p75,borderColor:'rgba(63,185,80,.3)',backgroundColor:'rgba(63,185,80,.04)',fill:'+1',borderWidth:1,pointRadius:0,tension:.3},
+      {label:'Median',data:p50,borderColor:'#58a6ff',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.3},
+      {label:'25th',data:p25,borderColor:'rgba(248,81,73,.3)',backgroundColor:'rgba(248,81,73,.04)',fill:'+1',borderWidth:1,pointRadius:0,tension:.3},
+      {label:'5th',data:p5,borderColor:'rgba(248,81,73,.4)',backgroundColor:'rgba(248,81,73,.06)',fill:false,borderWidth:1,pointRadius:0,tension:.3}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,pointStyle:'line',padding:12,font:{size:9}}}},
+    scales:{
+      x:{grid:{color:'rgba(48,54,61,.3)'},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(48,54,61,.3)'},ticks:{callback:function(v){return((v-1)*100).toFixed(0)+'%'},font:{size:9}}}
+    }
+  }
+});
+</script>
+</body>
+</html>
