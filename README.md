@@ -22,7 +22,7 @@ This repository contains a curated portfolio of quantitative finance projects de
 | Project | Core Focus | Relevant Desks |
 |---|---|---|
 | [Risk Forecasting Framework – VaR & Expected Shortfall](#risk-forecasting-var--expected-shortfall) | Historical · Parametric · GARCH · EVT · Backtesting | Risk, Portfolio Analytics |
-| [Multi-Asset Portfolio Risk Terminal](#multi-asset-portfolio-risk-terminal) | Michaud Resampling · Monte Carlo · Stress Testing · VaR/CVaR | Risk, Portfolio Management |
+| [Multi-Asset Portfolio Risk Terminal(Baraka Portfolio App)](#multi-asset-portfolio-risk-terminal) | Michaud Resampling · Monte Carlo · Stress Testing · VaR/CVaR | Risk, Portfolio Management |
 | [Heston Volatility Model Calibration](#heston-calibration-with-smile-fitting) | Stochastic Vol · Calibration · Model Risk | Vol Desk, Quant Risk |
 | [Interest Rate Risk Modelling – Hull-White](#hull-white-one-factor-model) | Yield Curve Dynamics · Bermudan Swaptions · IR Sensitivity | Rates Risk, XVA |
 
