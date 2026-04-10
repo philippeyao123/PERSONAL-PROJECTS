@@ -1,8 +1,8 @@
 # Quantitative Finance — Personal Projects
 
 > **Bathaix Philippe-Emmanuel Yao**  
-> MSc Financial Mathematics · London School of Economics (First-Class, 2026)  
-> MSc Data Science · University of Essex (First-Class) · FRM Candidate  
+> MSc Financial Mathematics · London School of Economics 
+> MSc Data Science · University of Essex  · FRM Candidate  
 > 📍 London · [LinkedIn](https://www.linkedin.com/) · yaophilippeemmanuel@gmail.com
 
 ---
