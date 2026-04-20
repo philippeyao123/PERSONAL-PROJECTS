@@ -1,8 +1,8 @@
 # Quantitative Finance — Personal Projects
 
 > **Bathaix Philippe-Emmanuel Yao**  
-> MSc Financial Mathematics · London School of Economics (First-Class, 2026)  
-> MSc Data Science · University of Essex (First-Class) · FRM Candidate  
+> MSc Financial Mathematics · London School of Economics 
+> MSc Data Science · University of Essex  · FRM Candidate  
 > 📍 London · [LinkedIn](https://www.linkedin.com/) · yaophilippeemmanuel@gmail.com
 
 ---
@@ -21,11 +21,10 @@ This repository contains a curated portfolio of quantitative finance projects de
 
 | Project | Core Focus | Relevant Desks |
 |---|---|---|
-| [Heston Calibration with Smile Fitting](#heston-calibration-with-smile-fitting) | Stochastic vol · Calibration · Model risk | Equity/FX Vol, Quant Analytics |
-| [FX Options Pricing Engine](#fx-options-pricing-engine) | Exotics · Local Vol · PDE & Monte Carlo | FX Desks, Structuring, QR |
-| [XVA Pricing Engine – IR Swaps](#xva-pricing-engine--interest-rate-swaps) | CVA/DVA · Counterparty risk · Exposure | CVA Desk, Rates, Risk |
-| [Autocallable Pricer](#autocallable-pricer) | Structured products · Path-dependency · Greeks | Equity Exotics, Structuring |
-| [Market-Making Simulator](#market-making-simulator) | Microstructure · Inventory risk · Spread | Electronic Trading, HFT |
+| [Risk Forecasting Framework – VaR & Expected Shortfall](#risk-forecasting-var--expected-shortfall) | Historical · Parametric · GARCH · EVT · Backtesting | Risk, Portfolio Analytics |
+| [Multi-Asset Portfolio Risk Terminal(Baraka Portfolio App)](#multi-asset-portfolio-risk-terminal) | Michaud Resampling · Monte Carlo · Stress Testing · VaR/CVaR | Risk, Portfolio Management |
+| [Heston Volatility Model Calibration](#heston-calibration-with-smile-fitting) | Stochastic Vol · Calibration · Model Risk | Vol Desk, Quant Risk |
+| [Interest Rate Risk Modelling – Hull-White](#hull-white-one-factor-model) | Yield Curve Dynamics · Bermudan Swaptions · IR Sensitivity | Rates Risk, XVA |
 
 ---
 
@@ -121,6 +120,14 @@ Order flow analysis, spread decomposition, microstructure signals, and toxicity 
 
 ### Risk, Credit & XVA
 
+#### Risk Forecasting – VaR & Expected Shortfall
+Historical, Parametric and GARCH-based VaR/ES models for portfolio risk measurement. Backtesting using Kupiec and Christoffersen tests. Tail-risk behaviour analysis under volatility clustering and Extreme Value Theory for tail estimation.  
+`VaR · ES · GARCH · EVT · Backtesting · Kupiec · Christoffersen`
+
+#### Multi-Asset Portfolio Risk Terminal
+Michaud Resampling optimisation (500 iterations) targeting maximum Sharpe under resampled uncertainty. Monte Carlo simulation (10,000 paths), historical stress testing (2008, COVID, Rate Hike, Stagflation), VaR/CVaR risk metrics, diversification ratio and factor attribution. Deployed as interactive dashboard.  
+`Michaud Resampling · Monte Carlo · Stress Testing · VaR/CVaR · Streamlit`
+
 #### XVA Pricing Engine – Interest Rate Swaps
 End-to-end XVA framework for vanilla IR swaps: CVA, DVA, and FVA computation. Exposure simulation under Hull–White dynamics, wrong-way risk analysis, and netting set aggregation.  
 `CVA · DVA · FVA · Counterparty risk · IR swaps · Wrong-way risk`
@@ -132,10 +139,6 @@ Firm-value model for credit risk. Distance-to-default estimation, PD extraction,
 #### Credit Risk Modelling
 Logistic regression and ML-based PD models. ROC/AUC/KS performance metrics.  
 `PD modelling · Scorecard · Classification`
-
-#### Risk Forecasting (VaR, ES, GARCH, EVT)
-Historical, parametric, and GARCH-based VaR/ES estimation. Extreme Value Theory for tail risk. Backtesting via Kupiec and Christoffersen tests.  
-`VaR · ES · GARCH · EVT · Backtesting`
 
 ---
 
