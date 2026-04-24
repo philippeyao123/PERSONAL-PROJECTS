@@ -110,7 +110,7 @@ strike consistent with call-put parity.
 
 Piecewise-constant instantaneous forward dividend yields are then bootstrapped:
 
-$$q_n = \frac{\ln\!\left(\frac{S_0\, e^{r(T_n)T_n - \sum_{k<n} q_k (T_k - T_{k-1})}}{F_{T_n}}\right)}{T_n - T_{n-1}}$$
+$$q_n = \frac{\ln\left(\frac{S_0 \, e^{r(T_n)T_n - \sum_{k<n} q_k (T_k - T_{k-1})}}{F_{T_n}}\right)}{T_n - T_{n-1}}$$
 
 The resulting dividend curve exhibits a visible seasonal peak around June–July,
 consistent with the CAC40 dividend calendar (most large-cap constituents detach
