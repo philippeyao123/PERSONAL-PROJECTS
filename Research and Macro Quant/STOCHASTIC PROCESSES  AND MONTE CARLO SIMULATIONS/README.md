@@ -88,7 +88,7 @@ pip install numpy scipy matplotlib ipywidgets jupyter
 ## Usage
 
 ```bash
-git clone https://github.com/<your-username>/stochastic-processes-mc.git
+git clone https://github.com/philippeyao123/stochastic-processes-mc.git
 cd stochastic-processes-mc
 jupyter notebook Stochastic_Processes_Monte_Carlo.ipynb
 ```
