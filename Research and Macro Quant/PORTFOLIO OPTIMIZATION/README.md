@@ -93,7 +93,7 @@ pip install pandas numpy matplotlib seaborn yfinance pypfopt cvxpy scipy
 ## Usage
 
 ```bash
-git clone https://github.com/<your-username>/portfolio-optimization.git
+git clone https://github.com/philippeyao123/portfolio-optimization.git
 cd portfolio-optimization
 jupyter notebook Portfolio_Optimization.ipynb
 ```
