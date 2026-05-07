@@ -103,7 +103,7 @@ python -c "import nltk; nltk.download('vader_lexicon')"
 ## Usage
 
 ```bash
-git clone https://github.com/<your-username>/financial-sentiment-analysis.git
+git clone https://github.com/philippeyao123/financial-sentiment-analysis.git
 cd financial-sentiment-analysis
 
 # Place all-data.csv in the same directory
