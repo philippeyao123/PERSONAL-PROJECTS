@@ -37,7 +37,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-@media(max-width:900px){.grid-2,.grid-3,.grid-5{grid-template-columns:1fr}}
+.grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+@media(max-width:900px){.grid-2,.grid-3,.grid-5,.grid-6{grid-template-columns:1fr}}
 
 /* CARDS */
 .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px;transition:border-color .2s}
@@ -118,6 +119,12 @@ tbody tr:hover{background:var(--card-hover)}
 .fade-up{opacity:0;transform:translateY(20px);animation:fadeUp .6s forwards}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 .d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}.d5{animation-delay:.5s}.d6{animation-delay:.6s}
+
+/* SCENARIO BUTTONS */
+.scen-btn{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--muted);background:var(--card-hover);border:1px solid var(--border);border-radius:6px;padding:7px 12px;cursor:pointer;transition:all .15s;letter-spacing:.02em}
+.scen-btn:hover{border-color:var(--dim);color:var(--text)}
+.scen-btn.active{background:var(--blue-bg);border-color:rgba(88,166,255,.4);color:var(--blue)}
+.kpi .delta{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:3px;font-weight:600;min-height:13px}
 </style>
 </head>
 <body>
@@ -147,12 +154,34 @@ tbody tr:hover{background:var(--card-hover)}
 </div>
 
 <!-- KPIs -->
-<div class="grid-5 fade-up d1">
-  <div class="card kpi green"><div class="label">Annual Return</div><div class="value">8.7%</div><div class="sub">vs 6.2% benchmark</div></div>
-  <div class="card kpi gold"><div class="label">Volatility</div><div class="value">11.3%</div><div class="sub">annualized</div></div>
-  <div class="card kpi blue"><div class="label">Sharpe Ratio</div><div class="value">0.59</div><div class="sub">rf = 2%</div></div>
-  <div class="card kpi red"><div class="label">Max Drawdown</div><div class="value">-14.2%</div><div class="sub">peak-to-trough</div></div>
-  <div class="card kpi purple"><div class="label">Sortino Ratio</div><div class="value">0.81</div><div class="sub">downside risk adjusted</div></div>
+<div class="grid-6 fade-up d1">
+  <div class="card kpi green"><div class="label">Annual Return</div><div class="value" id="kpiRet">8.7%</div><div class="sub" id="kpiRetSub">vs 6.2% benchmark</div><div class="delta" id="dRet"></div></div>
+  <div class="card kpi gold"><div class="label">Volatility</div><div class="value" id="kpiVol">11.3%</div><div class="sub">annualized</div><div class="delta" id="dVol"></div></div>
+  <div class="card kpi blue"><div class="label">Sharpe Ratio</div><div class="value" id="kpiSharpe">0.59</div><div class="sub">rf = 2%</div><div class="delta" id="dSharpe"></div></div>
+  <div class="card kpi red"><div class="label">Max Drawdown</div><div class="value" id="kpiMdd">-14.2%</div><div class="sub">peak-to-trough</div><div class="delta" id="dMdd"></div></div>
+  <div class="card kpi purple"><div class="label">Sortino Ratio</div><div class="value" id="kpiSortino">0.81</div><div class="sub">downside risk adjusted</div><div class="delta" id="dSortino"></div></div>
+  <div class="card kpi red"><div class="label">Worst-Case Stress</div><div class="value" id="kpiWcsl">-22.1%</div><div class="sub">across 7 scenarios</div><div class="delta"></div></div>
+</div>
+
+<!-- SCENARIO REPRICE -->
+<div class="card fade-up d1" style="margin-top:16px">
+  <div class="card-header">
+    <span class="card-title">Scenario Reprice <span style="color:var(--muted);font-weight:400">· KPIs conditional on shock</span></span>
+    <span class="card-subtitle" id="repriceState">Normal regime</span>
+  </div>
+  <div id="scenBtns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+    <button class="scen-btn active" data-s="normal">Normal</button>
+    <button class="scen-btn" data-s="crash08">2008 Crash</button>
+    <button class="scen-btn" data-s="covid">COVID</button>
+    <button class="scen-btn" data-s="rates">Rate Hike</button>
+    <button class="scen-btn" data-s="stag">Stagflation</button>
+    <button class="scen-btn" data-s="ipContained">Israel–Palestine · Contained</button>
+    <button class="scen-btn" data-s="ipEscalation">Israel–Palestine · Escalation</button>
+    <button class="scen-btn" data-s="commod">Commodities Shock</button>
+  </div>
+  <p style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:10px;line-height:1.6">
+    Return = annual return − stress loss · Vol = normal vol × crisis multiplier (corr blow-up) · Sharpe recomputed · MaxDD = max(historical, stress). Deltas vs normal shown under each KPI.
+  </p>
 </div>
 
 <!-- ROW 1: Allocation + Asset Class -->
@@ -252,7 +281,7 @@ tbody tr:hover{background:var(--card-hover)}
   <div class="card">
     <div class="card-header">
       <span class="card-title">Stress Scenarios</span>
-      <span class="card-subtitle">Portfolio impact under historical shocks</span>
+      <span class="card-subtitle">Factor-shock revaluation · Σ wᵢ·shockᵢ</span>
     </div>
     <div class="scenario">
       <div class="pct" style="color:var(--red)">−18.4%</div>
@@ -285,6 +314,35 @@ tbody tr:hover{background:var(--card-hover)}
         <p>Equities −15%, bonds −12%, only gold and commodities positive. Worst case for 60/40.</p>
         <div class="impact" style="color:var(--red)">→ Severe loss · Gold allocation provides partial hedge</div>
       </div>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--gold)">−1.0%</div>
+      <div>
+        <h4>Israel–Palestine · Contained</h4>
+        <p>Regional shock, no chokepoint disruption (Oct-2023 analogue). US equity −3%, intl/EM −4.5%, IG bonds +1% (flight to quality), gold +5%, BTC −5%, energy infra +2%.</p>
+        <div class="impact" style="color:var(--green)">→ Near-neutral $10K · Gold + IG bid absorb the equity/EM drawdown</div>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--red)">−3.9%</div>
+      <div>
+        <h4>Israel–Palestine · Regional Escalation</h4>
+        <p>Broad escalation toward Strait of Hormuz risk (Mar-2026 analogue: Brent &gt;$100, gold ~$5,400). US equity −8.5%, EM −12%, gold +11%, BTC −18%, energy infra +6%.</p>
+        <div class="impact" style="color:var(--gold)">→ Loss $39K · Gold (+11%) & IFRA (+6%) offset ~40% of the equity/EM hit</div>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="pct" style="color:var(--red)">−3.5%</div>
+      <div>
+        <h4>Commodities Supply Shock</h4>
+        <p>Energy/grain squeeze, USD bid, inflationary. Equities −7%, EM −10%, bonds −4% (real-rate pressure, no duration hedge), gold +10%, energy infra +9%, REITs −5%.</p>
+        <div class="impact" style="color:var(--gold)">→ Loss $35K · Real-asset sleeve (gold + IFRA) is the active hedge as bonds fail</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding:14px 20px 4px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;line-height:1.6">
+      Method: each scenario applies a per-factor shock vector to asset-class weights and revalues the book as Σ wᵢ·shockᵢ.
+      Geopolitical scenarios decompose the alternatives sleeve (gold, BTC, energy infra, REITs) by directional sensitivity rather than treating it as one block.
+      Magnitudes are anchored to historical analogues (Oct-2023, Mar-2026 Hormuz episode); not a forecast.
     </div>
   </div>
 
@@ -422,6 +480,58 @@ new Chart(document.getElementById('mcChart'),{
       y:{grid:{color:'rgba(48,54,61,.3)'},ticks:{callback:function(v){return((v-1)*100).toFixed(0)+'%'},font:{size:9}}}
     }
   }
+});
+
+// ===== SCENARIO REPRICE =====
+var BASE={ret:0.087,vol:0.113,sharpe:0.59,mdd:-0.142,sortino:0.81,rf:0.02};
+var SCEN={
+  normal:      {label:'Normal regime',          loss:0,      vm:1.0},
+  crash08:     {label:'2008-Style Crash',        loss:-0.184, vm:2.4},
+  covid:       {label:'COVID-Style Crisis',      loss:-0.127, vm:2.8},
+  rates:       {label:'Rate Hike Shock',         loss:-0.068, vm:1.4},
+  stag:        {label:'Stagflation',             loss:-0.221, vm:1.9},
+  ipContained: {label:'Israel–Palestine · Contained',  loss:-0.010, vm:1.3},
+  ipEscalation:{label:'Israel–Palestine · Escalation', loss:-0.039, vm:1.7},
+  commod:      {label:'Commodities Supply Shock',loss:-0.035, vm:1.6}
+};
+var baseDownDev=(BASE.ret-BASE.rf)/BASE.sortino;
+function fmtPct(x){return (x*100).toFixed(1)+'%';}
+function setDelta(id,d,invert){
+  var el=document.getElementById(id);if(!el)return;
+  if(Math.abs(d)<0.0005){el.textContent='';return;}
+  var good=invert?d<0:d>0;
+  el.style.color=good?'var(--green)':'var(--red)';
+  el.textContent=(d>0?'+':'')+((id==='dSharpe'||id==='dSortino')?d.toFixed(2):fmtPct(d));
+}
+function reprice(key){
+  var s=SCEN[key];
+  var ret=BASE.ret+s.loss;
+  var vol=BASE.vol*s.vm;
+  var sharpe=(ret-BASE.rf)/vol;
+  var mdd=Math.min(BASE.mdd,s.loss);
+  var downMult=1+(s.vm-1)*0.85;
+  var sortino=(ret-BASE.rf)/(baseDownDev*downMult);
+  document.getElementById('kpiRet').textContent=fmtPct(ret);
+  document.getElementById('kpiVol').textContent=fmtPct(vol);
+  document.getElementById('kpiSharpe').textContent=sharpe.toFixed(2);
+  document.getElementById('kpiMdd').textContent=fmtPct(mdd);
+  document.getElementById('kpiSortino').textContent=sortino.toFixed(2);
+  document.getElementById('kpiRetSub').textContent=(key==='normal')?'vs 6.2% benchmark':'incl. '+fmtPct(s.loss)+' shock';
+  document.getElementById('repriceState').textContent=s.label;
+  setDelta('dRet',ret-BASE.ret,false);
+  setDelta('dVol',vol-BASE.vol,true);
+  setDelta('dSharpe',sharpe-BASE.sharpe,false);
+  setDelta('dMdd',mdd-BASE.mdd,false);
+  setDelta('dSortino',sortino-BASE.sortino,false);
+}
+(function(){var w=0,k;for(k in SCEN){if(k!=='normal'&&SCEN[k].loss<w)w=SCEN[k].loss;}
+  document.getElementById('kpiWcsl').textContent=fmtPct(w);})();
+document.querySelectorAll('.scen-btn').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.scen-btn').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    reprice(b.getAttribute('data-s'));
+  });
 });
 </script>
 </body>
