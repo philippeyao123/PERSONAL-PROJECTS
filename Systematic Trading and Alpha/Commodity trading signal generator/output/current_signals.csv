@@ -1,0 +1,16 @@
+Ticker,name,sector,composite_signal,target_weight,sig_tsmom,sig_xsmom,sig_short_term_reversal,sig_vol_breakout,sig_skewness
+BZ=F,Brent Crude Oil,Energy,0.305,0.028,1.0,0.429,-0.143,-0.797,0.286
+CL=F,WTI Crude Oil,Energy,0.343,0.025,1.0,0.286,-0.0,-0.535,0.143
+CT=F,Cotton,Softs,0.086,0.023,1.0,-0.143,-0.714,-0.211,-1.0
+GC=F,Gold,Metals,0.471,0.08,1.0,0.143,1.0,-1.0,0.714
+HG=F,Copper,Metals,0.688,0.109,1.0,0.0,0.429,0.367,1.0
+HO=F,Heating Oil,Energy,0.32,0.027,1.0,0.857,-0.286,-0.612,-0.0
+KC=F,Coffee,Softs,-0.802,-0.122,-1.0,-0.857,-0.857,-0.83,-0.143
+NG=F,Natural Gas,Energy,-0.27,-0.023,-1.0,-1.0,0.571,0.4,0.429
+PL=F,Platinum,Metals,0.471,0.044,1.0,0.571,0.857,-1.0,0.571
+RB=F,RBOB Gasoline,Energy,0.114,0.019,1.0,0.714,-1.0,-0.717,-0.429
+SB=F,Sugar,Softs,-0.679,-0.132,-1.0,-0.714,-0.429,-0.18,-0.714
+SI=F,Silver,Metals,0.536,0.041,1.0,1.0,0.714,-1.0,0.857
+ZC=F,Corn,Agriculture,-0.7,-0.161,-1.0,-0.571,0.286,-1.0,-0.571
+ZS=F,Soybeans,Agriculture,0.136,0.05,1.0,-0.429,0.143,-1.0,-0.286
+ZW=F,Wheat,Agriculture,0.021,0.0,1.0,-0.286,-0.571,-0.683,-0.857
