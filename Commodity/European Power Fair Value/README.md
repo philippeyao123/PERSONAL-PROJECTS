@@ -1,6 +1,6 @@
 # European Power Fair Value — DE-LU Day-Ahead Forecasting & Prompt-Curve Views
 
-**Author:** Philippe — *[your email]*
+**Author:** Philippe — **
 **Market:** Germany–Luxembourg (DE-LU) · **Option A:** next-day hourly prices
 
 A daily fair-value prototype: ingest public fundamentals, forecast tomorrow's 24 hourly EPEX day-ahead prices before the D-1 12:00 CET auction, translate the forecast into a front-week curve view, and auto-generate the morning desk note with one audited LLM call.
