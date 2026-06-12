@@ -1,23 +1,23 @@
 # Machine Learning for Option Pricing
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
-![ML](https://img.shields.io/badge/ML-scikit--learn%20%7C%20Keras%20%7C%20Optuna-F7931E?style=flat)
+![ML](https://img.shields.io/badge/ML-scikit--learn%20%7C%20SHAP-F7931E?style=flat)
 ![Finance](https://img.shields.io/badge/Focus-Derivatives%20%7C%20Volatility%20%7C%20Option%20Pricing-58a6ff?style=flat)
 ![Status](https://img.shields.io/badge/Status-Active-3fb950?style=flat)
 
-> **Focus:** ML-based option price approximation · Black-Scholes benchmark & residual correction · SHAP interpretability · No-arbitrage constraints  
-> **Relevant for:** Quantitative Research, Equity/FX Vol Desks, Model Validation, Electronic Trading
+> **Focus:** ML correction of Black-Scholes mispricing · leakage-safe cross-sectional validation · homogeneity-normalised targets · SHAP interpretability · no-arbitrage constraints
+> **Relevant for:** Quantitative Research, Equity Vol Desks, Model Validation, Electronic Trading
 
 ---
 
 ## Overview
 
-This project implements a comparative machine learning framework for pricing equity call options using real market data (Yahoo Finance). Rather than replacing Black–Scholes, the framework pursues two complementary objectives:
+This project benchmarks machine learning models for pricing equity call options on live market data, with one central thesis: **ML should correct Black-Scholes, not replace it**. Two modes are compared end-to-end:
 
-1. **Direct pricing** — can ML map observable inputs to market prices more accurately than BS?
-2. **Residual correction** — use ML to learn and correct the systematic mispricing of BS, with Black-Scholes price as an additional input feature
+1. **Direct pricing** — map observable inputs to market prices.
+2. **Residual correction** — learn the *systematic mispricing* of a Black-Scholes anchor, i.e. the smile, and add the correction back: `price = BS(ATM vol) + ML(features)`.
 
-Six model families are benchmarked end-to-end, from linear baselines to recurrent architectures, with full hyperparameter tuning, cross-validation, SHAP interpretability, and no-arbitrage post-processing.
+The framework is deliberately strict about three methodological traps that plague most "ML for option pricing" projects, and quantifies each one rather than ignoring it.
 
 ---
 
@@ -27,78 +27,92 @@ Six model families are benchmarked end-to-end, from linear baselines to recurren
 
 ---
 
+## Methodology — the three traps, and how they are handled
+
+### 1. IV circularity
+
+Per-option implied volatility is *computed from the price*. Feeding it back as a feature to predict the price is near-circular: the model only needs to invert Black-Scholes. Instead, the **clean feature set uses the per-expiry ATM implied vol** as a smile-level anchor — the model must learn the skew and curvature itself. A *circular* feature set (per-option IV) is kept for comparison, so the gap is measured, not assumed:
+
+| Mode | Clean (ATM-IV) | Circular (per-option IV) |
+|---|---|---|
+| GradBoost residual, RMSE ($) | **0.086** | 0.207 |
+| RandomForest residual, RMSE ($) | **0.092** | 0.262 |
+
+The clean setup actually *wins* in residual mode: per-option IV adds bid-ask noise, while the ATM anchor plus moneyness structure is what generalises across expiries.
+
+### 2. Leakage through splitting and scaling
+
+Options from the same expiry share one smile snapshot — a random row split leaks the smile from train to test. The split here holds out **entire expiries** (`GroupShuffleSplit`), and cross-validation is `GroupKFold` by expiry: the cross-sectional analogue of walk-forward validation. `StandardScaler` lives only inside sklearn `Pipeline`s (refit within each fold) and only for scale-sensitive models (Linear, SVR, MLP). **Tree models receive raw features** — they are invariant to monotone transforms, so scaling them is pure pipeline risk for zero benefit.
+
+### 3. Target scale bias
+
+Standardising the raw price as a target mixes incomparable scales: a $0.05 OTM call and an $80 ITM call. MSE then rewards models that nail ITM prices while being terrible *in relative terms* on OTM — exactly where the smile matters. The fix exploits Black-Scholes homogeneity of degree one, `C(S, K) = K · c(S/K, T, σ, r)`: the target is the **strike-normalised midpoint `C/K`** (never standardised), and the label is the **bid-ask midpoint**, not `lastPrice` (which carries stale-trade and bid-ask noise).
+
+---
+
 ## Data
 
-- **Source:** Yahoo Finance (`yfinance`) — live equity call option chains
-- **Underlying:** AAPL (framework is ticker-agnostic)
-- **Target:** `lastPrice` — last traded call price
+- **Source:** Yahoo Finance (`yfinance`) — live AAPL call chains, 16 expiries fetched
+- **Filters:** two-sided live quotes, relative spread < 50%, T > 7 days, 0.7 < S/K < 1.3
+- **Sample (run of 2026-06-12):** 332 options · train 251 / 9 expiries · test 79 / 3 held-out expiries
 
-| Feature | Description | BS Greek Analogue |
+| Feature | Description | Role |
 |---|---|---|
-| `implied_volatility` | Market-implied vol from chain | Vega proxy |
-| `underlying_price` | Spot price at fetch time | Delta proxy |
-| `strike` | Option strike price | Delta proxy |
-| `time_to_maturity` | Calendar days / 365 | Theta proxy |
-| `risk_free_rate` | OIS rate (rolling 3M) | Rho proxy |
-| `bs_price` *(new)* | Black-Scholes theoretical price | Baseline anchor |
-| `moneyness` *(new)* | log(S/K) | Non-linear feature |
-| `bs_residual` *(new)* | `lastPrice − bs_price` | Correction target |
+| `log_moneyness` | log(S/K) | smile dimension to learn |
+| `sqrt_T` | √(time to maturity) | term-structure dimension |
+| `atm_iv` | per-expiry ATM implied vol | smile-level anchor (non-circular) |
+| `r` | risk-free rate | discounting |
+| `bs_atm_norm` | BS(ATM vol) / K | baseline anchor (residual mode) |
+| `iv` *(circular set only)* | per-option implied vol | circularity benchmark |
 
-> **Note on target:** `lastPrice` carries bid-ask noise. A cleaner alternative is the bid-ask midpoint — implemented in the preprocessing pipeline when both quotes are available.
-
-**Split:** 80/20 train/test · `StandardScaler` normalisation · `TimeSeriesSplit` for cross-validation (respects temporal ordering of option chains)
+**Target:** `mid / K` (direct mode) or `(mid − BS_atm) / K` (residual mode).
 
 ---
 
 ## Models
 
-| Model | Implementation | Key Hyperparameters |
-|---|---|---|
-| **Black-Scholes** *(baseline)* | Analytical (Garman-Kohlhagen) | σ = implied vol |
-| **Linear Regression** | sklearn | — |
-| **SVR (RBF)** | sklearn + GridSearchCV | C ∈ {0.1,1,10}, γ ∈ {scale, auto} |
-| **Random Forest** | sklearn | n_estimators=200, max_depth tuned via Optuna |
-| **Gradient Boosting** | sklearn GBM | n_estimators, learning_rate, subsample |
-| **Feedforward NN** | Keras Dense(256→128→64→1) | Dropout(0.2), BatchNorm, EarlyStopping |
-| **LSTM / GRU** | Keras sequential | 2 layers, hidden_dim tuned via Optuna |
-
-### Neural Network Architecture (improved)
-
-```
-Input (7 features)
-    │
-Dense(256, ReLU) → BatchNormalization → Dropout(0.2)
-    │
-Dense(128, ReLU) → BatchNormalization → Dropout(0.2)
-    │
-Dense(64,  ReLU) → Dropout(0.1)
-    │
-Dense(1)   ← linear output (price ≥ 0 enforced via ReLU clipping)
-```
-
-**Training:** Adam (lr=1e-3, cosine annealing) · MSE loss · EarlyStopping(patience=10, restore_best_weights=True) · Batch size 64
+| Model | Implementation | Scaling | Notes |
+|---|---|---|---|
+| **Black-Scholes (ATM vol)** | analytical baseline | — | the bar to beat |
+| Linear Regression | sklearn Pipeline | StandardScaler (in-fold) | sanity floor |
+| SVR (RBF) | sklearn Pipeline + GroupKFold grid | StandardScaler (in-fold) | C, γ tuned |
+| Random Forest | sklearn, 400 trees | none (raw) | min_samples_leaf=3 |
+| Gradient Boosting | HistGradientBoostingRegressor | none (raw) | lr=0.06, depth 6, L2=1.0 |
+| MLP | sklearn Pipeline, 256→128→64 | StandardScaler (in-fold) | early stopping |
 
 ---
 
-## Results
-
-### Model Comparison
+## Results — live AAPL run, held-out expiries
 
 ![Model Comparison](images/model_comparison.png)
 
-> Tree-based and deep models significantly outperform linear baselines, confirming non-linear structure in the option price surface beyond what Black-Scholes captures. Gradient Boosting and the Feedforward NN achieve the best trade-off between performance and interpretability.
+| Model | Mode | RMSE ($) | R² | Median rel. err ATM | Calendar viol. |
+|---|---|---|---|---|---|
+| **GradBoost** | **residual [clean]** | **0.086** | **0.99999** | **0.39%** | **0.0%** |
+| RandomForest | residual [clean] | 0.092 | 0.99999 | 0.48% | 0.0% |
+| SVR (RBF) | residual [clean] | 0.209 | 0.99995 | 0.60% | 0.0% |
+| Linear | direct [clean] | 0.549 | 0.99961 | 1.68% | 0.0% |
+| **BS (ATM vol)** | **baseline** | **0.867** | **0.99877** | **1.81%** | 0.0% |
+| GradBoost | direct [clean] | 1.245 | 0.99696 | 3.02% | 2.3% |
+| MLP | direct [clean] | 1.739 | 0.99649 | 7.16% | 11.4% |
 
-### Volatility Surface & Pricing Error
+Full table in [`results.csv`](results.csv). Three findings:
+
+1. **Residual mode dominates everywhere.** The best residual model cuts RMSE by **90% vs the BS baseline** (0.086 vs 0.867). The ML model only has to learn the smile correction — a small, structured target — instead of the full price map.
+2. **Direct mode can be *worse* than Black-Scholes.** Direct GBM (1.245) and MLP (1.739) underperform the analytical baseline on held-out expiries: tree extrapolation and unconstrained networks fail outside the training smile. This is the strongest argument for anchored architectures.
+3. **Neural networks generate arbitrage.** Direct MLP violates calendar-spread monotonicity on 11.4% of strike-matched pairs before post-processing; tree-based residual models violate none. No-arbitrage constraints are not optional for unconstrained function approximators.
+
+### Volatility surface & pricing error
 
 ![Vol Surface and Pricing Error](images/vol_surface_pricing_error.png)
 
-> Left: reconstructed implied vol surface showing smile and term structure. Right: ML pricing error vs Black-Scholes — residual errors are largest for deep OTM / deep ITM options and short maturities, consistent with where BS smile assumptions break down.
+> Left: the market implied-vol surface (smile + term structure). Right: BS(ATM) errors show the classic smirk signature — systematic, asymmetric in moneyness — while the residual-mode ML errors are flat around zero across the full strike range.
 
-### Black-Scholes Residuals
+### Black-Scholes residuals — before and after
 
 ![BS Residuals](images/bs_residuals.png)
 
-> The systematic structure in BS pricing errors (left) — concentrated around ATM and asymmetric in moneyness — is substantially reduced after ML correction. The residual distribution (right) tightens and centres around zero.
+> Left: BS(ATM) mispricing *is* the smile — negative on the put-wing-equivalent (low strikes priced with flat vol), positive ITM, with clear maturity dependence. Right: the residual distribution collapses from a bimodal ±$1.6 spread to a tight peak at zero after ML correction.
 
 ---
 
@@ -106,93 +120,73 @@ Dense(1)   ← linear output (price ≥ 0 enforced via ReLU clipping)
 
 ![SHAP Feature Importance](images/shap_importance.png)
 
-SHAP values decompose each prediction into feature contributions, enabling direct comparison with Black-Scholes greeks:
+| Feature | SHAP rank | Interpretation |
+|---|---|---|
+| `log_moneyness` | 1st | the smile — exactly what residual mode is supposed to learn |
+| `sqrt_T` | 2nd | term structure of the correction |
+| `bs_atm_norm` | 3rd | anchor level (correction scales with price) |
+| `atm_iv` | 4th | vol-level dependence of skew |
+| `r` | 5th | negligible at short maturities, as expected |
 
-| Feature | SHAP Rank | BS Analogue | Observation |
-|---|---|---|---|
-| Implied Volatility | 1st | Vega | Dominant driver, consistent with BS |
-| Underlying Price | 2nd | Delta | Expected for calls |
-| Strike | 3rd | Delta | Mirror of spot sensitivity |
-| Time to Maturity | 4th | Theta | Non-linear decay captured |
-| Risk-Free Rate | 5th | Rho | Minimal impact at low rates |
-
-> The SHAP ranking is consistent with Black-Scholes sensitivities, validating that the ML model has learned economically meaningful representations rather than overfitting to noise.
+The ranking is the economic signature of a smile model: moneyness dominates *because the target is the BS residual*. If `bs_atm_norm` dominated instead, the model would merely be re-learning the anchor — a useful diagnostic for overfitting to the baseline.
 
 ---
 
 ## No-Arbitrage Constraints
 
-Standard ML models can produce predictions that violate basic option pricing bounds. The following post-processing constraints are applied:
+Post-processing applied to every prediction:
 
 ```python
-# Intrinsic value lower bound
-price = np.maximum(price, np.maximum(S - K * np.exp(-r * T), 0))
+# Intrinsic lower bound and spot upper bound
+price = np.clip(price, np.maximum(S - K*np.exp(-r*T), 0.0), S)
 
-# Upper bound: call cannot exceed spot
-price = np.minimum(price, S)
+# Monotonicity in strike (call spread no-arbitrage):
+# isotonic regression per expiry, decreasing in K
+IsotonicRegression(increasing=False).fit_transform(K_sorted, price_sorted)
 
-# Monotonicity in strike (call spread no-arbitrage)
-# Enforced via isotonic regression post-processing on the K dimension
-
-# Calendar spread (no-arbitrage in T dimension)
-# Enforced by ensuring total implied variance σ²T is non-decreasing in T
+# Calendar-spread monotonicity is *measured* (violation rate reported
+# per model) rather than silently enforced — see results table.
 ```
 
 ---
 
-## Black-Scholes as a Feature (Residual Mode)
+## Limitations & next steps
 
-In addition to direct pricing, the framework supports a **residual learning** mode:
-
-```python
-# Add BS price as feature
-data['bs_price'] = data.apply(lambda r: black_scholes_call(
-    r.underlying_price, r.strike, r.time_to_maturity,
-    r.risk_free_rate, r.implied_volatility), axis=1)
-
-# Target becomes the BS mispricing
-data['bs_residual'] = data['lastPrice'] - data['bs_price']
-
-# Final prediction
-ml_price = bs_price + model.predict(X)
-```
-
-This architecture significantly improves convergence and reduces the burden on the ML model — it only needs to learn corrections to an already-good baseline.
-
----
-
-## Limitations
-
-| Limitation | Impact | Possible Fix |
+| Limitation | Impact | Fix |
 |---|---|---|
-| `lastPrice` as target | Bid-ask noise in label | Use bid-ask midpoint |
-| Constant risk-free rate | Minor at short maturities | OIS curve integration |
-| Single underlying (AAPL) | Idiosyncratic patterns | Multi-asset training |
-| No cross-sectional vol structure | May violate SVI/SSVI | Surface-aware loss function |
-| LSTM in cross-sectional mode | Sub-optimal use of recurrence | Panel time-series reformulation |
+| Single snapshot (one fetch date) | no temporal generalisation test | daily collection → true walk-forward |
+| Single underlying (AAPL) | idiosyncratic smile patterns | multi-asset panel |
+| Constant risk-free rate | minor at T < 1y | OIS curve bootstrap |
+| Isotonic post-processing in K only | calendar arbitrage measured, not enforced | surface-aware loss (SSVI penalty) |
+| ATM-IV still derived from prices | weaker but nonzero circularity | GARCH/realised-vol forecast as vol input |
+
+---
+
+## Structure & usage
+
+```
+ML-for-option-pricing/
+├── ml_option_pricing.py     # full pipeline (data → models → metrics → figures)
+├── plots.py                 # figure generation
+├── results.csv              # full results table (live run)
+├── requirements.txt
+├── images/                  # all figures, regenerated on each run
+└── README.md
+```
+
+```bash
+pip install -r requirements.txt
+python ml_option_pricing.py --ticker AAPL      # live run + figures
+python ml_option_pricing.py --synthetic --fast # offline smoke test (SVI-like smile)
+```
+
+The `--synthetic` mode generates an SVI-like smile with bid-ask noise and known ground truth — useful for validating that the pipeline itself (splits, scaling, constraints) is leakage-free before touching market data.
 
 ---
 
 ## Tech Stack
 
-`Python 3.10` · `NumPy` · `pandas` · `scikit-learn` · `TensorFlow / Keras` · `Optuna` · `SHAP` · `yfinance` · `SciPy` · `Matplotlib` · `Seaborn`
-
----
-
-## Structure
-
-```
-MACHINE_LEARNING_FOR_OPTION_PRICING/
-│
-├── ml_option_pricing.ipynb       # Main notebook
-├── images/
-│   ├── pipeline_architecture.png
-│   ├── model_comparison.png
-│   ├── vol_surface_pricing_error.png
-│   ├── shap_importance.png
-│   └── bs_residuals.png
-└── README.md
-```
+`Python 3.10+` · `NumPy` · `pandas` · `scikit-learn` · `SciPy` · `SHAP` · `yfinance` · `Matplotlib`
 
 ---
 
