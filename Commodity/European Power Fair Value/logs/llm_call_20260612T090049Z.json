@@ -1,0 +1,8 @@
+{
+  "timestamp": "20260612T090049Z",
+  "model": "claude-sonnet-4-6",
+  "system": "You are a power-market analyst writing a concise morning note for a prop trading desk. Use ONLY the numbers provided in the user message - never invent figures. Two short paragraphs: (1) tomorrow's DA fair value, the key drivers, and the shape of the day; (2) the prompt-curve view, its conviction, and what would invalidate it. Plain prose, no bullet points, no headers, max 160 words.",
+  "prompt": "Write today's morning note from this pipeline output:\n\n{\n  \"delivery_day\": \"2026-06-11\",\n  \"fair_value_baseload\": 104.22,\n  \"prompt_proxy\": 90.92,\n  \"gap_eur_mwh\": 13.3,\n  \"gap_zscore\": 0.68,\n  \"view\": \"NEUTRAL\",\n  \"wind_fcst_avg_gw\": 7.8,\n  \"solar_fcst_peak_gw\": 37.3,\n  \"temp_fcst_avg_c\": 14.2,\n  \"model_oos_mae\": 13.97,\n  \"model_skill_vs_naive\": 0.59,\n  \"qa_status\": \"PASS\",\n  \"qa_warnings\": [\n    \"5.92% negative price hours (expected in DE-LU under high renewables; kept in dataset)\"\n  ]\n}",
+  "dry_run": true,
+  "response": null
+}

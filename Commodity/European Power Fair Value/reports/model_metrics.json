@@ -1,0 +1,46 @@
+{
+  "metrics": {
+    "naive_w": {
+      "MAE": 34.11,
+      "RMSE": 53.0,
+      "R2": 0.017,
+      "skill_vs_naive": 0.0
+    },
+    "ridge": {
+      "MAE": 17.45,
+      "RMSE": 26.23,
+      "R2": 0.759,
+      "skill_vs_naive": 0.488
+    },
+    "lgbm": {
+      "MAE": 13.97,
+      "RMSE": 22.81,
+      "R2": 0.818,
+      "skill_vs_naive": 0.59
+    }
+  },
+  "importances": {
+    "price_lag24": 3495,
+    "price_w1_mean": 2999,
+    "price_d1_mean": 2723,
+    "renew_chg_24": 2634,
+    "price_d1_std": 2633,
+    "fcst_renewables": 2627,
+    "price_lag168": 2358,
+    "price_lag48": 2325,
+    "fcst_wind_total": 2301,
+    "wx_temperature_2m": 1859,
+    "wx_wind_speed_100m": 1803,
+    "dow": 1691,
+    "wx_shortwave_radiation": 1509,
+    "month": 1470,
+    "fcst_solar": 1381,
+    "hour": 866,
+    "hour_cos": 610,
+    "hdd": 581,
+    "cdd": 577,
+    "hour_sin": 534,
+    "is_holiday": 174,
+    "is_weekend": 50
+  }
+}

@@ -1,0 +1,5 @@
+# Morning note -- 2026-06-11
+
+Tomorrow's DA baseload fair value sits at 104.22 EUR/MWh, roughly 13 EUR above the trailing prompt mark of 90.92. The day is driven by soft wind (7.8 GW average across onshore and offshore) only partially offset by a strong 37.3 GW solar peak, with mild 14.2C temperatures keeping demand unremarkable; expect a deep midday trough and firm evening ramp as solar rolls off into thin wind. Model context: 13.97 EUR/MWh out-of-sample MAE, 59% better than the weekly naive, QA passing.
+
+The gap to the prompt is positive but at +0.68 z-score it stays below our 0.75 activation threshold, so the book carries no front-week view today: constructive bias, insufficient conviction. A downward revision to tomorrow's wind forecast or another firm print would tip the signal long; invalidation triggers remain a >5 GW renewables revision, a >2 GW REMIT outage, or a fuel-led move in the curve, which this DA model does not price.
