@@ -5,7 +5,7 @@
 ![Finance](https://img.shields.io/badge/Focus-Derivatives%20%7C%20Volatility%20%7C%20Option%20Pricing-58a6ff?style=flat)
 ![Status](https://img.shields.io/badge/Status-Active-3fb950?style=flat)
 
-> **Focus:** ML correction of Black-Scholes mispricing · leakage-safe cross-sectional validation · homogeneity-normalised targets · SHAP interpretability · no-arbitrage constraints
+> **Focus:** ML correction of Black-Scholes mispricing · Greeks approximation vs analytical · Monte Carlo benchmark · LSTM/GRU smile-as-sequence · leakage-safe validation · no-arbitrage constraints
 > **Relevant for:** Quantitative Research, Equity Vol Desks, Model Validation, Electronic Trading
 
 ---
@@ -74,11 +74,17 @@ Standardising the raw price as a target mixes incomparable scales: a $0.05 OTM c
 | Model | Implementation | Scaling | Notes |
 |---|---|---|---|
 | **Black-Scholes (ATM vol)** | analytical baseline | — | the bar to beat |
+| **Monte Carlo (GBM)** | antithetic variates, 100k paths | — | engine benchmark |
 | Linear Regression | sklearn Pipeline | StandardScaler (in-fold) | sanity floor |
 | SVR (RBF) | sklearn Pipeline + GroupKFold grid | StandardScaler (in-fold) | C, γ tuned |
 | Random Forest | sklearn, 400 trees | none (raw) | min_samples_leaf=3 |
 | Gradient Boosting | HistGradientBoostingRegressor | none (raw) | lr=0.06, depth 6, L2=1.0 |
 | MLP | sklearn Pipeline, 256→128→64 | StandardScaler (in-fold) | early stopping |
+| LSTM / GRU | PyTorch, bidirectional 2×64 | train-stats z-score | **smile-as-sequence** (below) |
+
+### LSTM / GRU — recurrence done honestly
+
+A naive LSTM over randomly ordered option rows is meaningless: one chain snapshot is cross-sectional, not a time series. The reformulation here treats **each expiry's smile as a sequence ordered by strike**: neighbouring strikes are strongly coupled (smile smoothness, butterfly no-arbitrage), so a bidirectional recurrent pass along the strike axis exploits local smile structure that pointwise models ignore. Each expiry is one padded sequence; the network emits one residual prediction per option (seq2seq, masked MSE), with early stopping on a held-out train expiry.
 
 ---
 
@@ -91,16 +97,20 @@ Standardising the raw price as a target mixes incomparable scales: a $0.05 OTM c
 | **GradBoost** | **residual [clean]** | **0.086** | **0.99999** | **0.39%** | **0.0%** |
 | RandomForest | residual [clean] | 0.092 | 0.99999 | 0.48% | 0.0% |
 | SVR (RBF) | residual [clean] | 0.209 | 0.99995 | 0.60% | 0.0% |
+| **LSTM (smile-seq)** | residual [clean] | 0.460 | 0.99975 | 1.83% | 0.0% |
 | Linear | direct [clean] | 0.549 | 0.99961 | 1.68% | 0.0% |
 | **BS (ATM vol)** | **baseline** | **0.867** | **0.99877** | **1.81%** | 0.0% |
+| **Monte Carlo (ATM vol)** | **baseline** | **0.886** | — | — | — |
 | GradBoost | direct [clean] | 1.245 | 0.99696 | 3.02% | 2.3% |
 | MLP | direct [clean] | 1.739 | 0.99649 | 7.16% | 11.4% |
+| GRU (smile-seq) | residual [clean] | 1.890 | 0.99552 | 2.29% | 13.6% |
 
-Full table in [`results.csv`](results.csv). Three findings:
+Full table in [`results.csv`](results.csv). Four findings:
 
 1. **Residual mode dominates everywhere.** The best residual model cuts RMSE by **90% vs the BS baseline** (0.086 vs 0.867). The ML model only has to learn the smile correction — a small, structured target — instead of the full price map.
 2. **Direct mode can be *worse* than Black-Scholes.** Direct GBM (1.245) and MLP (1.739) underperform the analytical baseline on held-out expiries: tree extrapolation and unconstrained networks fail outside the training smile. This is the strongest argument for anchored architectures.
-3. **Neural networks generate arbitrage.** Direct MLP violates calendar-spread monotonicity on 11.4% of strike-matched pairs before post-processing; tree-based residual models violate none. No-arbitrage constraints are not optional for unconstrained function approximators.
+3. **Recurrence helps, but data-hungrily.** The strike-sequence LSTM (0.460) beats every direct model, the MLP and the linear baseline — local smile structure is real signal — but loses to gradient boosting on 251 training options. The GRU underfits and generates calendar arbitrage; with a single snapshot, recurrent capacity is not yet paid for. This is the honest version of "LSTM for option pricing".
+4. **Neural networks generate arbitrage.** Direct MLP violates calendar-spread monotonicity on 11.4% of strike-matched pairs before post-processing; tree-based residual models violate none. No-arbitrage constraints are not optional for unconstrained function approximators.
 
 ### Volatility surface & pricing error
 
@@ -132,6 +142,41 @@ The ranking is the economic signature of a smile model: moneyness dominates *bec
 
 ---
 
+## Greeks — finite differences on the ML surface
+
+Any fitted model defines a pricing surface; **delta and vega are extracted by central finite differences**, bumping spot (±0.5%) and ATM vol (±50bp) and rebuilding all spot-dependent features (log-moneyness, BS anchor). The benchmark is the analytical BS greeks at the per-option implied vol — the market-standard greeks.
+
+![Greeks Comparison](images/greeks_comparison.png)
+
+| Model (residual mode) | Delta MAE | Vega MAE | Delta ∈ [0, 1] |
+|---|---|---|---|
+| **RandomForest** | **0.017** | 4.39 | 100% |
+| GradBoost | 0.021 | **3.46** | 100% |
+| Linear | 0.022 | 4.37 | 97.5% |
+| SVR (RBF) | 0.024 | 10.23 | 100% |
+| MLP | 0.123 | 244.1 | 82.3% |
+
+Two structural insights:
+
+- **The residual architecture inherits smooth greeks from the anchor.** Differentiating `BS(ATM) + K·ML(x)` means the analytical BS delta provides the smooth backbone; the ML term only perturbs it. This is why even *tree* models — whose raw surfaces are piecewise-constant — deliver delta MAE ≈ 0.02 here. A direct-mode tree would produce step-function deltas.
+- **A poorly-fit network is a risk hazard, not just a pricing one.** The MLP's vega MAE of 244 and out-of-range deltas (18% outside [0,1]) show that price RMSE understates the damage: unconstrained approximators corrupt *sensitivities* faster than *levels*. For hedging, surface smoothness is the binding requirement.
+
+---
+
+## Monte Carlo benchmark
+
+A GBM terminal-value Monte Carlo pricer (antithetic variates, 100,000 paths) is run on the test set at the ATM vol — under flat vol it must converge to BS(ATM), which validates the engine: max |MC − BS| = $0.159 with mean standard error $0.087, fully consistent.
+
+| Engine | RMSE vs market mid ($) | Runtime, 79 options |
+|---|---|---|
+| Monte Carlo (ATM vol, 100k paths) | 0.886 | 1,880 ms |
+| Black-Scholes analytic (ATM vol) | 0.867 | 0.5 ms |
+| **ML residual (GradBoost)** | **0.086** | **7.6 ms** |
+
+The point of the comparison: MC and analytic BS agree (same flat-vol model, so same smile-shaped error vs the market), while the ML correction prices the *actual smile* at **~250× the speed of Monte Carlo**. This is the standard industrial motivation for ML pricing approximators — replacing slow numerical engines in risk loops (XVA, scenario revaluation) where millions of repricings are needed — demonstrated here on the simplest possible case.
+
+---
+
 ## No-Arbitrage Constraints
 
 Post-processing applied to every prediction:
@@ -154,6 +199,7 @@ IsotonicRegression(increasing=False).fit_transform(K_sorted, price_sorted)
 
 | Limitation | Impact | Fix |
 |---|---|---|
+| GRU underfits on one snapshot | recurrent capacity unpaid-for | multi-snapshot panel training |
 | Single snapshot (one fetch date) | no temporal generalisation test | daily collection → true walk-forward |
 | Single underlying (AAPL) | idiosyncratic smile patterns | multi-asset panel |
 | Constant risk-free rate | minor at T < 1y | OIS curve bootstrap |
@@ -166,9 +212,12 @@ IsotonicRegression(increasing=False).fit_transform(K_sorted, price_sorted)
 
 ```
 ML-for-option-pricing/
-├── ml_option_pricing.py     # full pipeline (data → models → metrics → figures)
+├── ml_option_pricing.py     # core pipeline (data → models → metrics → figures)
+├── deep_models.py           # LSTM / GRU — smile-as-sequence (PyTorch)
+├── greeks_mc.py             # FD greeks on ML surfaces + Monte Carlo benchmark
 ├── plots.py                 # figure generation
 ├── results.csv              # full results table (live run)
+├── greeks.csv               # greeks accuracy table (live run)
 ├── requirements.txt
 ├── images/                  # all figures, regenerated on each run
 └── README.md
@@ -186,7 +235,7 @@ The `--synthetic` mode generates an SVI-like smile with bid-ask noise and known 
 
 ## Tech Stack
 
-`Python 3.10+` · `NumPy` · `pandas` · `scikit-learn` · `SciPy` · `SHAP` · `yfinance` · `Matplotlib`
+`Python 3.10+` · `NumPy` · `pandas` · `scikit-learn` · `PyTorch` · `SciPy` · `SHAP` · `yfinance` · `Matplotlib`
 
 ---
 

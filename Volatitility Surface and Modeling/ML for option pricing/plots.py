@@ -130,3 +130,34 @@ def fig_residuals(test: pd.DataFrame, best_px: np.ndarray,
     axes[1].set_title("Residual distribution — before vs after", fontsize=9)
     axes[1].legend(frameon=False, fontsize=8)
     fig.tight_layout(); fig.savefig(path, bbox_inches="tight"); plt.close(fig)
+
+
+# ------------------------------------------------------------ 6. greeks
+def fig_greeks(test: pd.DataFrame, fitted: dict, feats,
+               path="images/greeks_comparison.png"):
+    """FD delta from ML surfaces vs analytical BS delta across moneyness."""
+    from greeks_mc import fd_greeks, bs_delta
+    S, K, T, r, iv = (test[c].values for c in ["S", "strike", "T", "r", "iv"])
+    m = test["log_moneyness"].values
+    order = np.argsort(m)
+    d_ref = bs_delta(S, K, T, r, iv)
+
+    fig, ax = plt.subplots(figsize=(9.5, 4.2))
+    for i, (_, g) in enumerate(test.groupby("expiry")):
+        gm = g["log_moneyness"].values
+        o = np.argsort(gm)
+        d_g = bs_delta(g["S"].values, g["strike"].values, g["T"].values,
+                       g["r"].values, g["iv"].values)
+        ax.plot(gm[o], d_g[o], color="black", lw=1.5, alpha=0.85,
+                label="Analytical BS delta (per-option IV)" if i == 0 else None,
+                zorder=5)
+    palette = [C_BLUE, C_GREEN, C_ORANGE, C_RED, "#8b5cf6"]
+    for (name, model), c in zip(fitted.items(), palette):
+        d, _ = fd_greeks(test, model, feats, mode="residual")
+        ax.scatter(m, d, s=12, alpha=0.65, color=c, label=f"{name} (FD)")
+    ax.set_xlabel("log-moneyness"); ax.set_ylabel("delta")
+    ax.set_ylim(-0.1, 1.15)
+    ax.set_title("Greeks via finite differences on the ML surface — "
+                 "smoothness matters more than RMSE")
+    ax.legend(frameon=False, fontsize=7.5, ncol=2)
+    fig.tight_layout(); fig.savefig(path, bbox_inches="tight"); plt.close(fig)

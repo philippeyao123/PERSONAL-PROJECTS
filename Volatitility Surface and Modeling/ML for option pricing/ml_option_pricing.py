@@ -308,6 +308,7 @@ def run(df: pd.DataFrame, fast: bool = False):
 
     results: list[EvalRow] = []
     best = {"rmse": np.inf, "pred_norm": None, "name": None}
+    fitted_residual_clean = {}   # name -> fitted model (for greeks/MC)
 
     # Baseline: BS priced with the ATM vol (no smile) — the bar to beat
     results.append(evaluate("BS_ATMvol", "baseline", test,
@@ -325,9 +326,26 @@ def run(df: pd.DataFrame, fast: bool = False):
             pred = test["bs_atm_norm"].values + model.predict(Xte)
             row = evaluate(name, f"residual[{tag}]", test, pred)
             results.append(row)
-            if tag == "clean" and row.rmse_price < best["rmse"]:
-                best.update(rmse=row.rmse_price, name=name,
+            if tag == "clean":
+                fitted_residual_clean[name] = model
+                if row.rmse_price < best["rmse"]:
+                    best.update(rmse=row.rmse_price, name=name,
+                                pred_norm=enforce_no_arbitrage(test, pred))
+
+    # Recurrent models: smile-as-sequence (strike-ordered, per expiry)
+    try:
+        from deep_models import fit_predict_rnn
+        for cell in ("lstm", "gru"):
+            pred = (test["bs_atm_norm"].values +
+                    fit_predict_rnn(train, test, CLEAN_FEATURES, cell=cell,
+                                    epochs=120 if fast else 400))
+            row = evaluate(cell.upper() + "_smile", "residual[clean]", test, pred)
+            results.append(row)
+            if row.rmse_price < best["rmse"]:
+                best.update(rmse=row.rmse_price, name=cell.upper() + "_smile",
                             pred_norm=enforce_no_arbitrage(test, pred))
+    except ImportError:
+        print("[torch not installed — skipping LSTM/GRU]")
 
     # SHAP on the best tree model (clean features, residual mode)
     shap_vals = None
@@ -346,7 +364,21 @@ def run(df: pd.DataFrame, fast: bool = False):
 
     res = pd.DataFrame([vars(r) for r in results]).sort_values("rmse_price")
     res.to_csv(RESULTS_CSV, index=False)
-    return res, df, train, test, best, shap_vals
+
+    # Greeks (FD on the ML surface vs analytical BS) + Monte Carlo benchmark
+    greeks = mc = None
+    try:
+        from greeks_mc import greeks_report, mc_benchmark
+        fitted = {n: (m, "residual") for n, m in fitted_residual_clean.items()}
+        greeks = greeks_report(test, fitted, CLEAN_FEATURES)
+        greeks.to_csv("greeks.csv", index=False)
+        best_model = fitted_residual_clean.get(best["name"],
+                       fitted_residual_clean.get("GradBoost"))
+        mc = mc_benchmark(test, best_model, CLEAN_FEATURES)
+    except Exception as e:
+        print(f"[greeks/MC step skipped: {e}]")
+
+    return res, df, train, test, best, shap_vals, greeks, mc, fitted_residual_clean
 
 
 def main():
@@ -361,11 +393,23 @@ def main():
     df = synthetic_chain() if args.synthetic else fetch_live_chain(args.ticker)
     print(f"Loaded {len(df)} call options")
 
-    res, df_feat, train, test, best, shap_vals = run(df, fast=args.fast)
+    (res, df_feat, train, test, best,
+     shap_vals, greeks, mc, fitted) = run(df, fast=args.fast)
     pd.set_option("display.float_format", lambda v: f"{v:,.5f}")
     print("\n===== RESULTS (sorted by RMSE in price units) =====")
     print(res.to_string(index=False))
-    print(f"\nSaved -> {RESULTS_CSV}")
+    if greeks is not None:
+        print("\n===== GREEKS: FD on ML surface vs analytical BS (MAE) =====")
+        print(greeks.to_string(index=False))
+    if mc is not None:
+        print("\n===== MONTE CARLO BENCHMARK (test set) =====")
+        print(f"RMSE vs mid:  MC(ATM)={mc['rmse_mc']:.4f}  BS(ATM)={mc['rmse_bs']:.4f}"
+              f"  ML(best)={mc['rmse_ml']:.4f}")
+        print(f"MC vs BS max abs diff: {mc['mc_vs_bs_maxdiff']:.4f} "
+              f"(mean MC s.e. {mc['mc_mean_se']:.4f}, {mc['n_paths']:,} paths)")
+        print(f"Runtime ({mc['n_options']} options): MC {mc['t_mc_ms']:.1f} ms | "
+              f"BS {mc['t_bs_ms']:.2f} ms | ML {mc['t_ml_ms']:.2f} ms")
+    print(f"\nSaved -> {RESULTS_CSV}, greeks.csv")
 
     if not args.no_plots and best["pred_norm"] is not None:
         import plots
@@ -376,6 +420,8 @@ def main():
         plots.fig_residuals(test, best_px)
         if shap_vals is not None:
             plots.fig_shap(shap_vals, CLEAN_FEATURES)
+        if fitted:
+            plots.fig_greeks(test, fitted, CLEAN_FEATURES)
         print(f"Figures -> {IMAGES_DIR}/  (best model: {best['name']}, "
               f"RMSE ${best['rmse']:.3f})")
 
