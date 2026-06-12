@@ -18,6 +18,8 @@ Systematic multi-signal trading strategy on a 15-asset commodity futures univers
 | Sharpe 2015–2020 | −0.29 (the "trend winter") |
 | **Sharpe 2020–present** | **+0.50** |
 
+![Strategy tearsheet](output/tearsheet.png)
+
 **The honest headline:** over the full sample, the composite is statistically indistinguishable from zero — and that is precisely what the post-publication literature on commodity factors predicts for this period. The strategy clearly captures the post-2020 trend revival (Sharpe ~0.5), and clearly suffers the well-documented 2015–2019 trend winter. No parameter was tuned to hide either regime.
 
 ---
@@ -35,6 +37,8 @@ All signals output scores in [−1, 1], computed strictly on data available at *
 | **XSMOM 12m−1m** | 10% | cross-sectional momentum rank, last month skipped | Miffre & Rallis (2007, JBF) |
 
 Cross-sectional sleeves are dollar-neutral by construction (centred ranks).
+
+![Current composite signals](output/current_signals.png)
 
 ## Portfolio construction (standard CTA stack)
 
@@ -60,6 +64,8 @@ The most documented commodity premium (Gorton & Rouwenhorst 2006; Erb & Harvey 2
 
 1. **Live signal** — the full term structure of every commodity is rebuilt from individually listed Yahoo contracts (month-code chains per exchange: NYM/CMX/CBT/NYB). Carry is measured on a **12-month seasonal pair** (same calendar month, one year apart), which neutralises curve seasonality — essential for natural gas (the winter hump reaches +40% of the front price mid-curve) and agriculture, where a raw calendar slope conflates seasonality with the risk premium. Fallback: regression slope of ln(F) on maturity. Output: `output/current_carry.csv` + `output/carry_snapshot.png` (carry ranking + live curves).
 2. **Plug-ready backtest** — `carry_signal_from_history(f1, f2, dt_years)` produces the dollar-neutral cross-sectional sleeve from any F1/F2 history (Nasdaq Data Link CHRIS, Bloomberg `CL1/CL2 Comdty`, Refinitiv). Wire it into `build_composite` via config once curve history is available.
+
+![Live carry snapshot](output/carry_snapshot.png)
 
 Snapshot at the time of writing: the entire petroleum complex (HO, RB, CL, BZ) sits in strong backwardation (+15–18% annualised carry) while precious metals and grains are in contango — textbook cost-of-carry.
 
