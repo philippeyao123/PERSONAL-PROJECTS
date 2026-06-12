@@ -3,15 +3,15 @@ Front contracts: 2015-01-02 -> 2026-06-11 (2878 obs)
 [NatGas seasonality] Fourier K=2, share of detrended variance: 5.3%
 [NatGas deseasonalised OU] kappa=2.256/yr | mu(log)=-0.007 (level≈0.99) | sigma=0.672 | half-life=77 days | R²=0.982
 
-[WTI 1-factor OU] kappa=1.322/yr | mu(log)=4.138 (level≈62.66) | sigma=0.498 | half-life=132 days | R²=0.989
-[WTI Merton jump-diffusion] sigma_diff=32.3% | lambda=19.1 jumps/yr | jump size: N(-1.01%, 7.91%) | logL=6528.1
+[WTI 1-factor OU] kappa=1.323/yr | mu(log)=4.137 (level≈62.63) | sigma=0.498 | half-life=132 days | R²=0.989
+[WTI Merton jump-diffusion] sigma_diff=32.3% | lambda=19.0 jumps/yr | jump size: N(-1.01%, 7.92%) | logL=6528.0
     -> diffusive vol 32.3% vs unconditional 49.7%; jumps carry the tails
 
 [Term structure panel] 495 dates x 9 contracts (2024-06-03 -> 2026-06-11)
-[Schwartz-Smith 2-factor, Kalman MLE] kappa=2.53 (half-life 100d) | sigma_chi=33.9% | sigma_xi=21.1% | rho=+0.33 | mu_xi*=-3.42% | lambda_chi=+3.56% | s_err=47bp | logL=15803
-    -> last-day curve RMSE: 56bp of log price
+[Schwartz-Smith 2-factor, Kalman MLE] kappa=2.53 (half-life 100d) | sigma_chi=34.1% | sigma_xi=21.1% | rho=+0.33 | mu_xi*=-3.40% | lambda_chi=+25.63% | s_err=47bp | logL=15803
+    -> last-day curve RMSE: 55bp of log price
 
-[Monte Carlo 1y, 10k paths] spot now ≈ 91.0 | median 1y: 77.0 | 90% CI 1y: [48.1, 124.9]
+[Monte Carlo 1y, 10k paths] spot now ≈ 90.7 | median 1y: 82.1 | 90% CI 1y: [51.3, 133.3]
 
 [WTI-Brent spread stat-arb, base config] CAGR=0.2% | vol=18.6% | Sharpe=0.11 | MaxDD=-42.8% | hit=49% | trades=68 | VaR95(1d)=0.88% | ES95=2.06%
 

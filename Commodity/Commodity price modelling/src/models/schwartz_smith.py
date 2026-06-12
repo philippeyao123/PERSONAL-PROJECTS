@@ -118,10 +118,18 @@ def fit_schwartz_smith(log_f: pd.DataFrame, tau: pd.DataFrame,
                        dt: float = 1 / 252) -> tuple[SSParams, pd.DataFrame]:
     y = log_f.values
     tau_arr = tau.values
-    theta0 = np.array([np.log(1.5), np.log(0.30), 0.0, 0.0, 0.0,
-                       np.log(0.15), np.arctanh(0.3), np.log(0.01)])
-    res = minimize(_kalman_loglik, theta0, args=(y, tau_arr, dt),
-                   method="L-BFGS-B", options={"maxiter": 400})
+    # The likelihood has local optima in kappa (slow- vs fast-reverting
+    # decompositions of the same curve), especially on short samples —
+    # multi-start over kappa and keep the best optimum.
+    best = None
+    for kappa0 in (0.5, 1.5, 3.0):
+        theta0 = np.array([np.log(kappa0), np.log(0.30), 0.0, 0.0, 0.0,
+                           np.log(0.15), np.arctanh(0.3), np.log(0.01)])
+        res = minimize(_kalman_loglik, theta0, args=(y, tau_arr, dt),
+                       method="L-BFGS-B", options={"maxiter": 400})
+        if best is None or res.fun < best.fun:
+            best = res
+    res = best
     ll, states = _kalman_loglik(res.x, y, tau_arr, dt, return_states=True)
     t = res.x
     params = SSParams(np.exp(t[0]), np.exp(t[1]), t[2], t[3], t[4],
