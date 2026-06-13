@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+*.egg-info/
+build/
+dist/
+.DS_Store
+data/*.parquet
+
+# Keep cached demo data for offline reproducibility
+!data/voldata.parquet
+!data/basket.parquet
