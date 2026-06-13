@@ -238,3 +238,48 @@ def test_tsmom_costs_reduce_sharpe():
     free = TimeSeriesMomentum(cost_bps=0.0).run(prices).net_sharpe
     costly = TimeSeriesMomentum(cost_bps=50.0).run(prices).net_sharpe
     assert costly <= free + 1e-9
+
+
+# ----------------------------- plots -----------------------------
+def test_plots_generate_files(tmp_path):
+    """Figure functions write valid PNGs without error."""
+    import numpy as np
+    import pandas as pd
+
+    from alpha_factory.diagnostics.plots import (
+        plot_capacity,
+        plot_equity_curve,
+        plot_factor_ic,
+        plot_tsmom_decay,
+    )
+
+    dates = pd.bdate_range("2020-01-01", periods=50)
+    g = pd.Series(np.random.default_rng(0).normal(0.001, 0.01, 50), index=dates)
+    n = g - 0.0002
+    p1 = plot_equity_curve(g, n, tmp_path / "eq.png", "test")
+    assert p1.exists() and p1.stat().st_size > 0
+
+    ic = pd.DataFrame({
+        "ic_mean": [0.04, -0.01, 0.02],
+        "ic_std": [0.1, 0.1, 0.1],
+        "ic_ir": [0.4, -0.1, 0.2],
+        "t_stat": [3.0, -0.5, 1.0],
+        "n": [80, 80, 80],
+    }, index=["value", "lowvol", "mom"])
+    p2 = plot_factor_ic(ic, tmp_path / "ic.png")
+    assert p2.exists()
+
+    cap = pd.DataFrame({
+        "aum": np.logspace(7, 11, 10),
+        "net_return": np.linspace(0.06, -0.04, 10),
+    })
+    p3 = plot_capacity(cap, tmp_path / "cap.png")
+    assert p3.exists()
+
+    bp = pd.DataFrame({
+        "period": ["in-sample (<=2012)", "2000s", "2010s", "2020s"],
+        "sharpe": [0.4, 1.07, 0.17, 0.40],
+        "n_months": [70, 34, 120, 60],
+    })
+    p4 = plot_tsmom_decay(bp, tmp_path / "decay.png")
+    assert p4.exists()

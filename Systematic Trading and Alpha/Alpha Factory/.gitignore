@@ -13,3 +13,7 @@ venv/
 data/*.parquet
 .DS_Store
 .ipynb_checkpoints/
+
+# Keep the cached demo data so the repo runs offline out of the box.
+!data/equity/*.parquet
+!data/tsmom/*.parquet
