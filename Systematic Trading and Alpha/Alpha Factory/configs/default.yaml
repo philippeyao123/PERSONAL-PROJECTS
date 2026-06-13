@@ -1,0 +1,26 @@
+# Default backtest configuration.
+data:
+  source: synthetic        # synthetic | parquet
+  parquet_root: data/
+  fundamental_lag_days: 90
+
+backtest:
+  rebalance_freq: 21       # trading days between rebalances
+  warmup: 252
+  quantile: 0.10           # top/bottom decile long/short
+  max_weight: 0.05
+  ic_window: 6
+
+combiner:
+  method: ic               # equal | ic | ridge
+  winsor_limits: 0.025
+  ridge_lambda: 1.0
+
+costs:
+  half_spread_bps: 2.0
+  impact_coef_bps: 10.0
+  adv_participation: 0.05
+  borrow_bps_annual: 50.0
+
+diagnostics:
+  n_trials: 50             # be honest: how many configs did you actually try?
