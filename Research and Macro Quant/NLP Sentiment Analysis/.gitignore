@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pkl
+artifacts/*.png
+artifacts/*.json
+artifacts/*.pkl
+!docs/images/*.png
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
