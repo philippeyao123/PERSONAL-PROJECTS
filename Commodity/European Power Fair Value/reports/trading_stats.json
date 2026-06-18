@@ -1,0 +1,9 @@
+{
+  "days_evaluated": 144,
+  "active_days": 63,
+  "hit_rate": 0.762,
+  "avg_captured_eur_mwh": 17.23,
+  "median_captured_eur_mwh": 16.49,
+  "long_days": 29,
+  "short_days": 34
+}

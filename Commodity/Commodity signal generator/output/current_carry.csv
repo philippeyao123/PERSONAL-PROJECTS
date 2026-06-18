@@ -1,0 +1,16 @@
+,carry_annualized,method,n_contracts,carry_signal,state
+HO=F,0.17902541541263137,seasonal_pair_12m,14,1.0,backwardation
+RB=F,0.17521547431807638,seasonal_pair_12m,14,0.857,backwardation
+CL=F,0.17495273242249146,seasonal_pair_12m,14,0.714,backwardation
+BZ=F,0.14509154940654892,seasonal_pair_12m,13,0.571,backwardation
+KC=F,0.05229816767686975,seasonal_pair_12m,6,0.429,backwardation
+PL=F,-0.029037124847333118,seasonal_pair_12m,5,0.286,contango
+GC=F,-0.044485692289830535,seasonal_pair_12m,7,0.143,contango
+ZS=F,-0.04804081981065111,seasonal_pair_12m,9,0.0,contango
+HG=F,-0.05567763985378793,seasonal_pair_12m,7,-0.143,contango
+SI=F,-0.056176180894039224,seasonal_pair_12m,7,-0.286,contango
+NG=F,-0.0626771664244665,seasonal_pair_12m,14,-0.429,contango
+CT=F,-0.07519944411446375,seasonal_pair_12m,6,-0.571,contango
+SB=F,-0.08803738640332852,seasonal_pair_12m,5,-0.714,contango
+ZW=F,-0.09550399703528342,seasonal_pair_12m,6,-0.857,contango
+ZC=F,-0.13080535731528423,seasonal_pair_12m,6,-1.0,contango
