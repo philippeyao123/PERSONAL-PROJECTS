@@ -29,7 +29,6 @@ The rest are research notebooks and prototypes.
 |---|---|---|---|
 | [G2++ Swaption Engine](./Rates%20and%20IR%20Derivatives/Swaptions%20Engine) | Rates | Two-factor Gaussian model; semi-analytic European **validated vs Monte Carlo (<1%)**; Bermudan via Longstaff-Schwartz; calibration to vol surface (**sub-2bp RMSE**); bucketed DV01 / vega / scenario risk | 🟢 tests + CI |
 | [Multi-Asset Alpha Factory](./Systematic%20Trading%20and%20Alpha/Alpha%20Factory) | Systematic | Cross-sectional factor pipeline with **point-in-time data**, **deflated Sharpe (Bailey-López de Prado)**, realistic costs, capacity analysis; includes a **critical replication of Time-Series Momentum** showing post-publication decay | 🟢 tests + CI |
-| [Commodity Price Modelling](./Commodity/Commodity%20price%20modelling) | Commodities | Schwartz-Smith two-factor, Merton jump-diffusion, three-factor model, OU stat-arb with optimal trading bands; full pricing → signal → backtest pipeline | 🟢 modular `src/` |
 | [XVA Pricing Engine](./Rates%20and%20IR%20Derivatives/XVA%20Pricing%20Engine%20-%20Interest%20Rate%20Swaps) | Credit / Counterparty | CVA / DVA / FVA on IR swaps; exposure simulation under Hull-White, wrong-way risk, netting-set aggregation, SIMM capital | Engine + analysis |
 
 ---
@@ -73,10 +72,6 @@ replication of Moskowitz-Ooi-Pedersen Time-Series Momentum** demonstrating
 post-publication Sharpe decay.
 `PIT data · Deflated Sharpe · IC/IR · Capacity · Walk-forward · TSMOM replication`
 
-#### Commodity Signal Generator *(modular `src/` + tests)*
-Carry and momentum signal engine across commodity futures with a vectorised
-backtester, transaction costs, and a performance tearsheet.
-`Carry · Momentum · Backtester · Tearsheet`
 
 #### Volatility Arbitrage — Implied vs Realised
 Implied–realised spread strategy with delta-hedged gamma positions and P&L
@@ -105,21 +100,6 @@ with a feature/modelling/quoting pipeline and dashboard.
 
 ---
 
-### 🟢 Commodities
-
-#### Commodity Price Modelling *(modular `src/`)*
-Schwartz-Smith two-factor and three-factor models, Merton jump-diffusion,
-seasonality, and an OU stat-arb with optimal trading bands. Full pipeline from
-price modelling through Monte Carlo to a calendar-spread strategy.
-`Schwartz-Smith · Jump-diffusion · Three-factor · OU bands · Monte Carlo`
-
-#### European Power Fair Value *(modular `src/`)*
-ML fair-value model for European power: ingestion, feature engineering,
-walk-forward forecasting, QA, and an automated morning/trading note with
-AI-generated commentary.
-`Power · LightGBM · Walk-forward · Feature engineering · Automated reporting`
-
----
 
 ### Exotic & Structured Products Pricing
 
