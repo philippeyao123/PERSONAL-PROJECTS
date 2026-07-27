@@ -1,6 +1,6 @@
 # qf-rates
 
-[![CI](https://github.com/philippeyao123/qf-rates/actions/workflows/ci.yml/badge.svg)](https://github.com/philippeyao123/qf-rates/actions/workflows/ci.yml)
+[![CI](https://github.com/OWNER/qf-rates/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/qf-rates/actions/workflows/ci.yml)
 
 `qf-rates` is a dependency-light C++20 library for interest-rate pricing and risk. Release
 `v0.1.0` covers deterministic yield curves, vanilla swaps, Black-76 and Bachelier options, the
@@ -49,12 +49,9 @@ Optional Python module:
 python3 -m pip install pybind11
 cmake -S . -B build-py -DQF_BUILD_TESTS=OFF -DQF_BUILD_PYTHON=ON
 cmake --build build-py --parallel
-PYTHONPATH=build-py python3 scripts/python_bindings_smoke.py
+PYTHONPATH=build-py python3 -c \
+  "import qf_rates_python as q; print(q.black76(q.OptionType.Call,100,100,.2,1,.95).price)"
 ```
-
-The bindings cover curves, swaps, Black-76/Bachelier, G2++, European Monte Carlo, Bermudan LSM,
-calibration, DV01 and volatility scenarios. They are intentionally a research API rather than a
-stable production ABI.
 
 ## Compact API
 
@@ -103,9 +100,8 @@ scripts/          reproducible local commands and Python cross-check
 
 ## Quality and limitations
 
-The CI matrix builds on macOS and Linux with warnings-as-errors, runs tests, executes clang-format
-and clang-tidy, validates the Python API against QuantLib, and runs ASan/UBSan on Linux. The G2++
-European engine uses three-dimensional order-8 Gauss-Hermite
+The CI matrix builds on macOS and Linux with warnings-as-errors, runs tests, checks formatting, and
+runs ASan/UBSan on Linux. The G2++ European engine uses three-dimensional order-8 Gauss-Hermite
 quadrature over the jointly Gaussian discount integral and terminal factors. The Monte-Carlo engine
 is an independent discretized validation implementation. LSM uses six polynomial basis functions
 with a European lower-bound safeguard.
@@ -118,12 +114,6 @@ risk. The reproducible performance baseline is in
 
 ## Release
 
-Development is integrated under `qf-rates/` in the
-[`PERSONAL-PROJECTS`](https://github.com/philippeyao123/PERSONAL-PROJECTS) monorepo. A subtree split
-is also published as the autonomous
-[`philippeyao123/qf-rates`](https://github.com/philippeyao123/qf-rates) repository, with its own CI,
-tag and GitHub release. This preserves monorepo integration while allowing independent cloning,
-building and versioning.
-
-Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md); the release process is documented in
-[`docs/release-checklist.md`](docs/release-checklist.md).
+The source tree is prepared for `v0.1.0`. Replace `OWNER` in the badge after publishing, then follow
+[`docs/release-checklist.md`](docs/release-checklist.md). Changes are recorded in
+[`CHANGELOG.md`](CHANGELOG.md).

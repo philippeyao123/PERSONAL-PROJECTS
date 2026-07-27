@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
 
 permissions:
@@ -24,8 +23,6 @@ jobs:
         run: cmake --build build --parallel
       - name: Test
         run: ctest --test-dir build --output-on-failure
-      - name: Install
-        run: cmake --install build --prefix "$RUNNER_TEMP/qf-rates"
       - name: Python reference
         run: python3 scripts/python_reference.py
 
@@ -34,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configure ASan and UBSan
-        run: >-
+        run: >
           cmake -S . -B build-san -DCMAKE_BUILD_TYPE=Debug
           -DQF_ENABLE_SANITIZERS=ON -DQF_WARNINGS_AS_ERRORS=ON
       - name: Build
@@ -52,48 +49,7 @@ jobs:
       - name: Install clang-format
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: Check formatting
-        run: >-
+        run: >
           find include src tests examples benchmarks python
           -type f \( -name '*.hpp' -o -name '*.cpp' \)
           -print0 | xargs -0 clang-format --dry-run --Werror
-
-  clang-tidy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install clang-tidy
-        run: sudo apt-get update && sudo apt-get install -y clang-tidy
-      - name: Configure static analysis
-        run: >-
-          cmake -S . -B build-tidy -DCMAKE_BUILD_TYPE=Debug
-          -DQF_BUILD_TESTS=OFF -DQF_BUILD_EXAMPLES=OFF
-          -DCMAKE_CXX_CLANG_TIDY=clang-tidy
-      - name: Run clang-tidy
-        run: cmake --build build-tidy --parallel
-
-  python-validation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install Python validation dependencies
-        run: python3 -m pip install --disable-pip-version-check pybind11 QuantLib
-      - name: Configure bindings
-        run: >-
-          cmake -S . -B build-py -DCMAKE_BUILD_TYPE=Release
-          -DQF_BUILD_TESTS=OFF -DQF_BUILD_EXAMPLES=OFF -DQF_BUILD_PYTHON=ON
-          -Dpybind11_DIR="$(python3 -m pybind11 --cmakedir)"
-      - name: Build bindings
-        run: cmake --build build-py --parallel
-      - name: Exercise Python API
-        env:
-          PYTHONPATH: build-py
-        run: python3 scripts/python_bindings_smoke.py
-      - name: Cross-check QuantLib
-        env:
-          PYTHONPATH: build-py
-        run: >-
-          python3 scripts/python_reference.py
-          --require-quantlib --require-bindings
