@@ -16,6 +16,27 @@ TEST_CASE("Netting does not increase expected positive exposure") {
   }
 }
 
+TEST_CASE("Wrong-way risk is deterministic and changes exposure and CVA") {
+  auto curve = std::make_shared<qf::FlatYieldCurve>(0.025);
+  const qf::G2ppModel model(curve, {});
+  const std::vector<qf::InterestRateSwap> swaps{
+      qf::make_vanilla_swap(0.0, 7.0, 0.02, 1'000'000.0)};
+  const std::vector<double> times{0.5, 1.0, 2.0, 3.0, 4.0, 5.0};
+  const auto independent = qf::simulate_swap_exposure(model, swaps, times, 4000, 19, true, 0.0);
+  const auto wrong_way = qf::simulate_swap_exposure(model, swaps, times, 4000, 19, true, 20.0);
+  const auto repeated = qf::simulate_swap_exposure(model, swaps, times, 4000, 19, true, 20.0);
+
+  bool changed = false;
+  for (std::size_t index = 0; index < times.size(); ++index) {
+    REQUIRE(wrong_way.epe[index] == repeated.epe[index]);
+    changed = changed || std::abs(wrong_way.epe[index] - independent.epe[index]) > 1.0e-8;
+  }
+  REQUIRE(changed);
+  const auto independent_xva = qf::compute_xva(*curve, independent);
+  const auto wrong_way_xva = qf::compute_xva(*curve, wrong_way);
+  REQUIRE(wrong_way_xva.cva != Approx(independent_xva.cva).margin(1.0e-8));
+}
+
 TEST_CASE("CVA DVA FVA SIMM and MVA are non-negative") {
   const qf::FlatYieldCurve curve(0.02);
   qf::ExposureProfile profile{

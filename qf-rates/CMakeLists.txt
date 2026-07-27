@@ -122,6 +122,8 @@ endif()
 if(QF_BUILD_BENCHMARKS)
     add_executable(qf_rates_bench benchmarks/pricing_benchmark.cpp)
     target_link_libraries(qf_rates_bench PRIVATE qf::rates)
+    add_executable(qf_rates_validation benchmarks/validation_benchmark.cpp)
+    target_link_libraries(qf_rates_validation PRIVATE qf::rates)
 endif()
 
 if(QF_BUILD_PYTHON)

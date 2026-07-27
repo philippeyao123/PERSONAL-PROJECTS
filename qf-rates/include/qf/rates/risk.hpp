@@ -44,4 +44,15 @@ std::vector<ScenarioResult> run_swap_scenarios(const InterestRateSwap& swap,
                                                const InterpolatedYieldCurve& curve,
                                                double shock = 0.0010);
 
+struct VolatilityScenarioResult {
+  std::string name;
+  Volatility volatility{};
+  Money price{};
+  Money change{};
+};
+
+std::vector<VolatilityScenarioResult> run_bachelier_volatility_scenarios(
+    OptionType type, Rate forward, Rate strike, Volatility base_volatility, Time expiry,
+    double annuity, Volatility shock = 0.0010, Money notional = 1.0);
+
 }  // namespace qf

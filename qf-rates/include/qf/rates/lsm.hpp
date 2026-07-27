@@ -17,10 +17,13 @@ struct BermudanSwaption {
   double fixed_frequency{1.0};
 };
 
+enum class LsmBasis { Linear, Quadratic };
+
 struct LsmConfig {
   std::size_t paths{20000};
   std::size_t steps_per_year{12};
   std::uint64_t seed{42U};
+  LsmBasis basis{LsmBasis::Quadratic};
 };
 
 struct LsmResult {

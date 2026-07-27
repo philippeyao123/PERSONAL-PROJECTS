@@ -22,6 +22,25 @@ TEST_CASE("Generic Monte-Carlo confidence interval contains the analytic value")
   REQUIRE(analytic <= result.confidence_high + 0.05);
 }
 
+TEST_CASE("Antithetic and control variates measurably reduce sampling error") {
+  constexpr double forward = 100.0;
+  constexpr double strike = 100.0;
+  constexpr double volatility = 0.20;
+  const auto terminal = [](double normal) {
+    return forward * std::exp(-0.5 * volatility * volatility + volatility * normal);
+  };
+  const auto payoff = [&](double normal) { return std::max(terminal(normal) - strike, 0.0); };
+
+  const auto plain = qf::monte_carlo_normal(payoff, {40000, 1, 17, false});
+  const auto antithetic = qf::monte_carlo_normal(payoff, {40000, 1, 17, true});
+  const auto controlled =
+      qf::monte_carlo_normal(payoff, {40000, 1, 17, false}, terminal, forward);
+
+  CAPTURE(plain.standard_error, antithetic.standard_error, controlled.standard_error);
+  REQUIRE(antithetic.standard_error < plain.standard_error);
+  REQUIRE(controlled.standard_error < 0.75 * plain.standard_error);
+}
+
 TEST_CASE("G2++ quadrature and Monte-Carlo agree within simulation noise") {
   auto curve = std::make_shared<qf::FlatYieldCurve>(0.025);
   const qf::G2ppModel model(curve, {});

@@ -1,7 +1,6 @@
 #include "qf/rates/lsm.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <vector>
 
@@ -12,7 +11,10 @@
 namespace qf {
 namespace {
 
-std::array<double, 6> basis(FactorState state) {
+std::vector<double> basis(FactorState state, LsmBasis choice) {
+  if (choice == LsmBasis::Linear) {
+    return {1.0, state.x, state.y};
+  }
   return {1.0, state.x, state.y, state.x * state.x, state.x * state.y, state.y * state.y};
 }
 
@@ -81,8 +83,11 @@ LsmResult g2pp_bermudan_lsm(const G2ppModel& model, const BermudanSwaption& swap
         exercise_value(model, swaption, swaption.exercise_times.back(), states.back()[path]);
   }
   for (std::size_t reverse = dates - 1U; reverse-- > 0U;) {
-    std::array<std::array<double, 6>, 6> normal_matrix{};
-    std::array<double, 6> normal_rhs{};
+    const std::size_t basis_size =
+        config.basis == LsmBasis::Linear ? std::size_t{3U} : std::size_t{6U};
+    std::vector<std::vector<double>> normal_matrix(basis_size,
+                                                   std::vector<double>(basis_size));
+    std::vector<double> normal_rhs(basis_size);
     std::vector<double> immediate(config.paths);
     std::vector<double> continuation(config.paths);
     std::size_t in_the_money = 0U;
@@ -94,7 +99,7 @@ LsmResult g2pp_bermudan_lsm(const G2ppModel& model, const BermudanSwaption& swap
         continue;
       }
       ++in_the_money;
-      const auto regressors = basis(states[reverse][path]);
+      const auto regressors = basis(states[reverse][path], config.basis);
       for (std::size_t row = 0; row < regressors.size(); ++row) {
         normal_rhs[row] += regressors[row] * continuation[path];
         for (std::size_t column = 0; column < regressors.size(); ++column) {
@@ -102,13 +107,15 @@ LsmResult g2pp_bermudan_lsm(const G2ppModel& model, const BermudanSwaption& swap
         }
       }
     }
-    std::vector<double> coefficients(6U, 0.0);
-    if (in_the_money >= 12U) {
-      std::vector<std::vector<double>> matrix(6U, std::vector<double>(6U));
-      std::vector<double> rhs(6U);
-      for (std::size_t row = 0; row < 6U; ++row) {
+    std::vector<double> coefficients(basis_size, 0.0);
+    const std::size_t minimum_regression_paths = 2U * basis_size;
+    if (in_the_money >= minimum_regression_paths) {
+      std::vector<std::vector<double>> matrix(basis_size,
+                                              std::vector<double>(basis_size));
+      std::vector<double> rhs(basis_size);
+      for (std::size_t row = 0; row < basis_size; ++row) {
         rhs[row] = normal_rhs[row];
-        for (std::size_t column = 0; column < 6U; ++column) {
+        for (std::size_t column = 0; column < basis_size; ++column) {
           matrix[row][column] = normal_matrix[row][column];
         }
         matrix[row][row] += 1.0e-12;
@@ -117,9 +124,9 @@ LsmResult g2pp_bermudan_lsm(const G2ppModel& model, const BermudanSwaption& swap
     }
     for (std::size_t path = 0; path < config.paths; ++path) {
       double estimated = continuation[path];
-      if (immediate[path] > 0.0 && in_the_money >= 12U) {
+      if (immediate[path] > 0.0 && in_the_money >= minimum_regression_paths) {
         estimated = 0.0;
-        const auto regressors = basis(states[reverse][path]);
+        const auto regressors = basis(states[reverse][path], config.basis);
         for (std::size_t index = 0; index < regressors.size(); ++index) {
           estimated += coefficients[index] * regressors[index];
         }
