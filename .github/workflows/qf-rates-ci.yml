@@ -1,13 +1,22 @@
-name: CI
+name: qf-rates CI
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    paths:
+      - "qf-rates/**"
+      - ".github/workflows/qf-rates-ci.yml"
   pull_request:
+    paths:
+      - "qf-rates/**"
+      - ".github/workflows/qf-rates-ci.yml"
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: qf-rates
 
 jobs:
   build:

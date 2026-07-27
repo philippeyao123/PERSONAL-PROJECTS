@@ -33,8 +33,7 @@ TEST_CASE("Antithetic and control variates measurably reduce sampling error") {
 
   const auto plain = qf::monte_carlo_normal(payoff, {40000, 1, 17, false});
   const auto antithetic = qf::monte_carlo_normal(payoff, {40000, 1, 17, true});
-  const auto controlled =
-      qf::monte_carlo_normal(payoff, {40000, 1, 17, false}, terminal, forward);
+  const auto controlled = qf::monte_carlo_normal(payoff, {40000, 1, 17, false}, terminal, forward);
 
   CAPTURE(plain.standard_error, antithetic.standard_error, controlled.standard_error);
   REQUIRE(antithetic.standard_error < plain.standard_error);

@@ -85,8 +85,7 @@ LsmResult g2pp_bermudan_lsm(const G2ppModel& model, const BermudanSwaption& swap
   for (std::size_t reverse = dates - 1U; reverse-- > 0U;) {
     const std::size_t basis_size =
         config.basis == LsmBasis::Linear ? std::size_t{3U} : std::size_t{6U};
-    std::vector<std::vector<double>> normal_matrix(basis_size,
-                                                   std::vector<double>(basis_size));
+    std::vector<std::vector<double>> normal_matrix(basis_size, std::vector<double>(basis_size));
     std::vector<double> normal_rhs(basis_size);
     std::vector<double> immediate(config.paths);
     std::vector<double> continuation(config.paths);
@@ -110,8 +109,7 @@ LsmResult g2pp_bermudan_lsm(const G2ppModel& model, const BermudanSwaption& swap
     std::vector<double> coefficients(basis_size, 0.0);
     const std::size_t minimum_regression_paths = 2U * basis_size;
     if (in_the_money >= minimum_regression_paths) {
-      std::vector<std::vector<double>> matrix(basis_size,
-                                              std::vector<double>(basis_size));
+      std::vector<std::vector<double>> matrix(basis_size, std::vector<double>(basis_size));
       std::vector<double> rhs(basis_size);
       for (std::size_t row = 0; row < basis_size; ++row) {
         rhs[row] = normal_rhs[row];

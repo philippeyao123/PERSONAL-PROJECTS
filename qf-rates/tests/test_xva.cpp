@@ -1,6 +1,9 @@
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "qf/rates/xva.hpp"
+
+using Catch::Approx;
 
 TEST_CASE("Netting does not increase expected positive exposure") {
   auto curve = std::make_shared<qf::FlatYieldCurve>(0.025);
@@ -19,8 +22,7 @@ TEST_CASE("Netting does not increase expected positive exposure") {
 TEST_CASE("Wrong-way risk is deterministic and changes exposure and CVA") {
   auto curve = std::make_shared<qf::FlatYieldCurve>(0.025);
   const qf::G2ppModel model(curve, {});
-  const std::vector<qf::InterestRateSwap> swaps{
-      qf::make_vanilla_swap(0.0, 7.0, 0.02, 1'000'000.0)};
+  const std::vector<qf::InterestRateSwap> swaps{qf::make_vanilla_swap(0.0, 7.0, 0.02, 1'000'000.0)};
   const std::vector<double> times{0.5, 1.0, 2.0, 3.0, 4.0, 5.0};
   const auto independent = qf::simulate_swap_exposure(model, swaps, times, 4000, 19, true, 0.0);
   const auto wrong_way = qf::simulate_swap_exposure(model, swaps, times, 4000, 19, true, 20.0);

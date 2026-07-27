@@ -91,8 +91,7 @@ std::vector<ScenarioResult> run_swap_scenarios(const InterestRateSwap& swap,
 std::vector<VolatilityScenarioResult> run_bachelier_volatility_scenarios(
     OptionType type, Rate forward, Rate strike, Volatility base_volatility, Time expiry,
     double annuity, Volatility shock, Money notional) {
-  if (base_volatility < 0.0 || shock <= 0.0 || expiry < 0.0 || annuity <= 0.0 ||
-      notional <= 0.0) {
+  if (base_volatility < 0.0 || shock <= 0.0 || expiry < 0.0 || annuity <= 0.0 || notional <= 0.0) {
     throw ValidationError("Invalid volatility scenario inputs");
   }
   const double base =

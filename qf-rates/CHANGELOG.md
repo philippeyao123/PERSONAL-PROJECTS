@@ -16,7 +16,10 @@ All notable changes follow Keep a Changelog. Version numbers follow semantic ver
 - Independent G2++ Monte-Carlo validation and confidence intervals.
 - Normal-volatility calibration with expiry/tenor diagnostics.
 - Bermudan swaption Longstaff–Schwartz engine and convergence controls.
-- Parallel/bucketed DV01, bucketed vega and curve scenarios.
+- Linear and quadratic LSM bases with a documented multi-seed convergence grid.
+- Parallel/bucketed DV01, bucketed vega, curve scenarios and explicit volatility shocks.
 - Exposure simulation, netting, proxy WWR, CVA/DVA/FVA and simplified SIMM/MVA.
-- Catch2 test suite, CI, sanitizers, benchmark, example and optional Python bindings.
-
+- Quantified antithetic/control-variate reduction and deterministic WWR regression tests.
+- QuantLib validation for swaps, G2++ swaptions and calibration.
+- Catch2 test suite, active monorepo and standalone CI, clang-tidy, sanitizers and benchmarks.
+- Python bindings for curves, swaps, G2++, Monte Carlo, LSM, calibration and market risk.
