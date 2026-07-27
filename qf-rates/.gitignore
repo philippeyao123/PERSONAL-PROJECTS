@@ -1,0 +1,16 @@
+/build/
+/build-*/
+/.cache/
+/.clangd/
+/.idea/
+/.vscode/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.profraw
+*.profdata
+.DS_Store
+

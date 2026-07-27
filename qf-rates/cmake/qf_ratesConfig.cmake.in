@@ -1,0 +1,4 @@
+@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/qf_ratesTargets.cmake")
+check_required_components(qf_rates)
+
