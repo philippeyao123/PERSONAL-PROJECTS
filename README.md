@@ -22,13 +22,16 @@ The rest are research notebooks and prototypes.
 
 ## 🔑 Start Here — Flagship Projects
 
-> Two standalone quantitative libraries plus a counterparty-risk engine. If
-> you review only a few projects, review these.
+> Six desk-oriented projects spanning rates, systematic research, commodities,
+> power and counterparty risk. If you review only a few projects, review these.
 
 | Project | Asset Class | What makes it desk-relevant | Status |
 |---|---|---|---|
 | [qf-rates — Rates Pricing & Risk Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/qf-rates) | Rates | C++20 library covering curves, swaps, Black-76/Bachelier, G2++, European and Bermudan swaptions, calibration, Monte Carlo, LSM, DV01, volatility scenarios and XVA; independently **validated against QuantLib and Monte Carlo** | 🟢 package + tests + CI |
 | [Systematic Research — Point-in-Time Research Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/systematic-research) | Systematic | Python research framework with **point-in-time data**, survivorship-bias controls, realistic costs and market impact, walk-forward validation, PSR/DSR, capacity, attribution and deterministic experiment tracking | 🟢 package + tests + CI |
+| [Commodity Price Modeling & Trading](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/Commodity%20price%20modelling) | Energy Commodities | Schwartz, Schwartz–Smith and three-factor models; futures-curve calibration by Kalman filtering, jump diffusion, Monte Carlo and strictly out-of-sample WTI/Brent and calendar-spread research | Research pipeline |
+| [Commodity Trading Signal Generator](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/Commodity%20signal%20generator) | Systematic Commodities | Five point-in-time signals across 15 futures, ex-ante volatility targeting, turnover controls, transaction costs, live carry analytics and honest regime-by-regime attribution | 🟢 tests |
+| [European Power Fair Value](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/European%20Power%20Fair%20Value) | European Power | Leakage-controlled DE-LU day-ahead hourly forecasting using weather and TSO fundamentals; walk-forward LightGBM, prompt-curve views, automated QA and audited LLM commentary | Pipeline + QA |
 | [XVA Pricing Engine](./Rates%20and%20IR%20Derivatives/XVA%20Pricing%20Engine%20-%20Interest%20Rate%20Swaps) | Credit / Counterparty | CVA / DVA / FVA on IR swaps; exposure simulation under Hull-White, wrong-way risk, netting-set aggregation, SIMM capital | Engine + analysis |
 
 ---
@@ -110,6 +113,64 @@ optimal execution, multi-asset MM, and an RL quoter; P&L decomposition.
 Roll, Corwin-Schultz and Avellaneda-Stoikov spread reconstruction from data,
 with a feature/modelling/quoting pipeline and dashboard.
 `Roll · Corwin-Schultz · Spread estimation · Microstructure`
+
+---
+
+### 🟠 Commodities & Power
+
+#### [Commodity Price Modeling & Trading](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/Commodity%20price%20modelling)
+An end-to-end energy-commodities research pipeline for WTI, Brent and Henry Hub
+natural gas. It combines Fourier seasonality, an exact-MLE Schwartz one-factor
+model, Merton jump diffusion and a Schwartz–Smith two-factor state-space model.
+The latter is calibrated to a futures-curve panel by maximum-likelihood Kalman
+filtering, extracts short- and long-term latent factors and generates 10,000
+exact-discretisation Monte Carlo paths.
+
+Extensions add a three-factor spot/convenience-yield/rates model, a strictly
+out-of-sample χ-driven calendar-spread strategy and Leung–Li optimal
+mean-reversion bands. The research explicitly documents identification
+problems, unstable mean reversion and weak strategy results rather than
+optimising them away: the WTI–Brent strategy produces a net Sharpe near 0.1,
+while the limited OOS calendar sample supports only a few round trips.
+
+`Python · Schwartz–Smith · Kalman filter · Merton jumps · Futures curves · Monte Carlo · Leung–Li`
+
+#### [Commodity Trading Signal Generator](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/Commodity%20signal%20generator)
+A systematic multi-signal strategy across 15 energy, metals, agriculture and
+soft-commodity futures. Its five sleeves combine canonical time-series
+momentum, Donchian breakout, short-term cross-sectional reversal, the skewness
+premium and 12-minus-1-month cross-sectional momentum. Every score uses
+information available at time \(t\) and is executed at \(t+1\).
+
+Portfolio construction uses inverse-volatility sizing, an EWMA covariance
+matrix, a single ex-ante 10% volatility-targeting step, per-asset and gross
+leverage caps, and a no-trade band that reduces turnover by roughly 45%.
+Results include costs, Sharpe uncertainty, drawdown, VaR/ES and sleeve-level
+attribution. The full-period net Sharpe is close to zero, with the 2015–2020
+trend winter and post-2020 recovery reported separately. A live carry module
+rebuilds commodity futures curves and provides a plug-ready historical API
+without pretending that unavailable paid curve history was backtested.
+
+`Python · TSMOM · XSMOM · Carry · Vol targeting · Transaction costs · Attribution · pytest`
+
+#### [European Power Fair Value — DE-LU](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/European%20Power%20Fair%20Value)
+A daily power-trading prototype that forecasts the next 24 Germany–Luxembourg
+EPEX day-ahead hourly prices before the D-1 auction. Public data ingestion
+combines auction prices, TSO solar/wind forecasts and weather forecasts as they
+were originally issued. All raw responses are cached and eight structural and
+market-data QA checks cover missing hours, duplicates, physical ranges,
+negative prices, stale feeds, spikes and 23/24/25-hour DST days.
+
+Walk-forward validation uses expanding windows, weekly refits and complete
+delivery-day forecasts. LightGBM achieves MAE 13.97 EUR/MWh and 59% skill
+against the same-hour weekly naive benchmark on the recorded sample. The model
+translates hourly forecasts into a baseload fair value and a front-week view,
+with explicit invalidation rules for forecast revisions, outages and
+fuel/carbon shocks. One structured LLM call turns pipeline-owned numbers into a
+morning note; prompts and raw responses are logged, and the LLM never generates
+quantitative values.
+
+`Python · Power markets · LightGBM · Walk-forward · TSO fundamentals · Data QA · LLM audit`
 
 ---
 
