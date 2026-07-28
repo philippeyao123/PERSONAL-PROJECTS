@@ -152,9 +152,9 @@ Running ingestion will legitimately change the dataset fingerprint.
 └── requirements-paper.txt
 ```
 
-## AI commentary
+## Commentary
 
-`src/ai_commentary.py` can turn pipeline-computed values into a short desk
+`src/commentary.py` can turn pipeline-computed values into a short desk
 note. It is isolated from the scientific calculations:
 
 - the language model never computes paper numbers;
