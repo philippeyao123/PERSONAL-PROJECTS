@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software or its frozen research artifacts, please cite the paper."
+title: "European Power Fair Value: Reproducible Day-Ahead Forecasting and Prompt-Proxy Diagnostics for the Germany-Luxembourg Market"
+type: software
+authors:
+  - family-names: "Yao"
+    given-names: "Bathaix Philippe-Emmanuel"
+version: 1.0.0
+date-released: 2026-07-28
+license: MIT
+repository-code: "https://github.com/philippeyao123/PERSONAL-PROJECTS"
+keywords:
+  - electricity price forecasting
+  - day-ahead market
+  - Germany-Luxembourg
+  - LightGBM
+  - conformal prediction
+  - reproducible research

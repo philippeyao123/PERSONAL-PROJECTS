@@ -13,6 +13,7 @@ STEPS = [
     ("Quality assurance", ["qa.py"]),
     ("Walk-forward modelling", ["models.py"]),
     ("Prompt-curve translation", ["trading.py"]),
+    ("Research diagnostics", ["research.py"]),
     ("Figures", ["make_figures.py"]),
     ("AI morning note", ["ai_commentary.py"]
      + ([] if "--live-ai" in sys.argv else ["--dry-run"])),

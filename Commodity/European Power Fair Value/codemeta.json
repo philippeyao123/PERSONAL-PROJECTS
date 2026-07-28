@@ -1,0 +1,26 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "European Power Fair Value",
+  "description": "Reproducible DE-LU day-ahead electricity-price forecasting, uncertainty diagnostics, feature ablations, and prompt-proxy analysis.",
+  "version": "1.0.0",
+  "dateCreated": "2026-06-12",
+  "dateModified": "2026-07-28",
+  "license": "https://spdx.org/licenses/MIT",
+  "codeRepository": "https://github.com/philippeyao123/PERSONAL-PROJECTS",
+  "programmingLanguage": "Python",
+  "runtimePlatform": "Python 3.12",
+  "author": {
+    "@type": "Person",
+    "givenName": "Bathaix Philippe-Emmanuel",
+    "familyName": "Yao"
+  },
+  "keywords": [
+    "electricity price forecasting",
+    "day-ahead",
+    "DE-LU",
+    "LightGBM",
+    "conformal intervals",
+    "walk-forward validation"
+  ]
+}

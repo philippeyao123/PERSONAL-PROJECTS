@@ -5,9 +5,10 @@ Sources (all public, no API key required):
      - /price                : EPEX day-ahead auction prices, bidding zone DE-LU
      - /public_power_forecast: TSO day-ahead forecasts of solar / wind generation
   2. Open-Meteo Historical Forecast API (CC BY 4.0)
-     - weather forecasts *as originally issued* (not reanalysis), so every
-       feature is genuinely available before the D-1 12:00 CET auction
-       -> no look-ahead leakage by construction.
+     - a continuous series stitched from the first hours of successive
+       operational forecasts.  Because this does not preserve a fixed D-1
+       lead time, weather is excluded from the primary publication model and
+       retained only for a labelled sensitivity.
 
 All series are stored on a UTC hourly index.
 """
@@ -120,8 +121,11 @@ def fetch_renewables_forecast() -> pd.DataFrame:
 
 
 def fetch_weather_forecast() -> pd.DataFrame:
-    """Open-Meteo *historical forecast* (forecasts as issued), averaged
-    across five German cities -> national proxies."""
+    """Open-Meteo stitched historical forecasts averaged across five cities.
+
+    These national proxies do not preserve a fixed target-hour lead time and
+    must not be included in the primary D-1 specification.
+    """
     city_frames = []
     for name, (lat, lon) in CITIES.items():
         print(f"  weather forecast: {name}")

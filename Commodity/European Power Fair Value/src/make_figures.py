@@ -1,4 +1,4 @@
-"""Generate all figures for the README / case-study document."""
+"""Generate the README figures and vector figures used by the arXiv paper."""
 from __future__ import annotations
 
 import json
@@ -9,7 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from config import DATA, FIGS, REPORTS
+from config import DATA, FIGS, REPORTS, ROOT
+
+PAPER_FIGS = ROOT / "paper" / "figures"
+PAPER_FIGS.mkdir(parents=True, exist_ok=True)
 
 plt.rcParams.update({
     "figure.dpi": 130, "font.size": 9, "axes.grid": True,
@@ -17,6 +20,15 @@ plt.rcParams.update({
 })
 C = {"actual": "#1a1a2e", "pred": "#e63946", "ridge": "#457b9d",
      "fv": "#e63946", "prompt": "#1d3557", "long": "#2a9d8f", "short": "#e76f51"}
+
+
+def save(fig: plt.Figure, stem: str) -> None:
+    """Write a compact README PNG and a vector PDF from the same figure."""
+    fig.tight_layout()
+    fig.savefig(FIGS / f"{stem}.png", dpi=170, bbox_inches="tight")
+    fig.savefig(FIGS / f"{stem}.pdf", bbox_inches="tight")
+    fig.savefig(PAPER_FIGS / f"{stem}.pdf", bbox_inches="tight")
+    plt.close(fig)
 
 
 def load() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
@@ -42,7 +54,7 @@ def fig_price_history(df: pd.DataFrame) -> None:
     ax2.set_ylim(0, 24); ax2.grid(False); ax2.spines["right"].set_visible(True)
     ax.set_ylabel("EUR/MWh")
     ax.set_title("DE-LU day-ahead baseload (daily mean) and negative-price hours")
-    fig.tight_layout(); fig.savefig(FIGS / "01_price_history.png"); plt.close(fig)
+    save(fig, "01_price_history")
 
 
 def fig_pred_vs_actual(res: pd.DataFrame) -> None:
@@ -54,7 +66,7 @@ def fig_pred_vs_actual(res: pd.DataFrame) -> None:
             label="naive (lag-168h)")
     ax.set_ylabel("EUR/MWh"); ax.legend(ncols=3, fontsize=8)
     ax.set_title("Out-of-sample next-day hourly forecasts -- last 14 days")
-    fig.tight_layout(); fig.savefig(FIGS / "02_pred_vs_actual.png"); plt.close(fig)
+    save(fig, "02_pred_vs_actual")
 
 
 def fig_scatter(res: pd.DataFrame, info: dict) -> None:
@@ -67,7 +79,7 @@ def fig_scatter(res: pd.DataFrame, info: dict) -> None:
     m = info["metrics"]["lgbm"]
     ax.set_xlabel("actual (EUR/MWh)"); ax.set_ylabel("predicted (EUR/MWh)")
     ax.set_title(f"LightGBM OOS: MAE {m['MAE']} | R2 {m['R2']}")
-    fig.tight_layout(); fig.savefig(FIGS / "03_scatter.png"); plt.close(fig)
+    save(fig, "03_scatter")
 
 
 def fig_mae_by_hour(res: pd.DataFrame) -> None:
@@ -85,7 +97,7 @@ def fig_mae_by_hour(res: pd.DataFrame) -> None:
     ax.set_xlabel("hour (CET/CEST)"); ax.set_ylabel("MAE (EUR/MWh)")
     ax.set_title("Forecast error by delivery hour (errors peak at the evening ramp)")
     ax.legend(fontsize=8); ax.set_xticks(range(0, 24, 2))
-    fig.tight_layout(); fig.savefig(FIGS / "04_mae_by_hour.png"); plt.close(fig)
+    save(fig, "04_mae_by_hour")
 
 
 def fig_importance(info: dict) -> None:
@@ -93,7 +105,7 @@ def fig_importance(info: dict) -> None:
     fig, ax = plt.subplots(figsize=(6.5, 3.6))
     ax.barh(imp.index, imp.values, color=C["ridge"])
     ax.set_title("LightGBM feature importance (top 12, split count)")
-    fig.tight_layout(); fig.savefig(FIGS / "05_feature_importance.png"); plt.close(fig)
+    save(fig, "05_feature_importance")
 
 
 def fig_fair_value(daily: pd.DataFrame) -> None:
@@ -117,7 +129,170 @@ def fig_fair_value(daily: pd.DataFrame) -> None:
             color=np.where(daily["gap_z"] > 0, C["long"], C["short"]), alpha=0.8)
     ax2.axhline(0.75, color="k", lw=0.6, ls="--"); ax2.axhline(-0.75, color="k", lw=0.6, ls="--")
     ax2.set_ylabel("gap z-score")
-    fig.tight_layout(); fig.savefig(FIGS / "06_fair_value_vs_prompt.png"); plt.close(fig)
+    save(fig, "06_fair_value_vs_prompt")
+
+
+def fig_model_uncertainty() -> None:
+    metrics = pd.read_csv(DATA / "model_comparison.csv").set_index("model")
+    order = ["naive_w", "ridge", "lgbm"]
+    labels = ["Weekly naive", "Ridge", "LightGBM"]
+    frame = metrics.loc[order]
+    yerr = np.vstack([
+        frame["mae"] - frame["mae_ci_low"],
+        frame["mae_ci_high"] - frame["mae"],
+    ])
+    fig, ax = plt.subplots(figsize=(6.2, 3.4))
+    bars = ax.bar(
+        labels, frame["mae"], yerr=yerr, capsize=4,
+        color=["#9ca3af", C["ridge"], C["pred"]],
+    )
+    ax.bar_label(bars, fmt="%.2f", padding=4)
+    ax.set_ylabel("MAE (EUR/MWh)")
+    ax.set_title("Full-year walk-forward error with day-block 95% intervals")
+    save(fig, "07_model_uncertainty")
+
+
+def fig_cumulative_skill(res: pd.DataFrame) -> None:
+    days = res.index.tz_convert("Europe/Berlin").normalize()
+    daily = pd.DataFrame(index=res.index)
+    for model in ("naive_w", "ridge", "lgbm"):
+        daily[model] = (res[model] - res["y_true"]).abs()
+    daily = daily.groupby(days).mean()
+    fig, ax = plt.subplots(figsize=(8.2, 3.4))
+    for comparator, color, label in (
+        ("naive_w", "#6b7280", "LightGBM vs weekly naive"),
+        ("ridge", C["ridge"], "LightGBM vs Ridge"),
+    ):
+        improvement = (daily[comparator] - daily["lgbm"]).expanding().mean()
+        ax.plot(improvement.index, improvement, color=color, lw=1.5, label=label)
+    ax.axhline(0, color="black", lw=0.7)
+    ax.set_ylabel("Cumulative mean MAE gain (EUR/MWh)")
+    ax.set_title("Stability of forecast skill through the out-of-sample year")
+    ax.legend(fontsize=8)
+    save(fig, "08_cumulative_skill")
+
+
+def fig_season_hour_heatmap(res: pd.DataFrame) -> None:
+    local = res.index.tz_convert("Europe/Berlin")
+    month = local.month
+    season = np.select(
+        [month.isin([12, 1, 2]), month.isin([3, 4, 5]), month.isin([6, 7, 8])],
+        ["Winter", "Spring", "Summer"], default="Autumn",
+    )
+    frame = pd.DataFrame({
+        "season": season,
+        "hour": local.hour,
+        "ae": (res["lgbm"] - res["y_true"]).abs().to_numpy(),
+    })
+    order = ["Winter", "Spring", "Summer", "Autumn"]
+    matrix = frame.pivot_table(
+        index="season", columns="hour", values="ae", aggfunc="mean"
+    ).reindex(order)
+    fig, ax = plt.subplots(figsize=(9.0, 3.2))
+    image = ax.imshow(matrix, aspect="auto", cmap="YlOrRd")
+    ax.set_yticks(range(len(order)), order)
+    ax.set_xticks(range(0, 24, 2), range(0, 24, 2))
+    ax.set_xlabel("Delivery hour (CET/CEST)")
+    ax.set_title("LightGBM MAE by season and delivery hour")
+    fig.colorbar(image, ax=ax, label="MAE (EUR/MWh)", pad=0.02)
+    save(fig, "09_season_hour_heatmap")
+
+
+def fig_conformal_path() -> None:
+    conformal = pd.read_csv(DATA / "conformal_diagnostics.csv", index_col=0)
+    conformal.index = pd.to_datetime(conformal.index, utc=True)
+    last = conformal.loc[
+        conformal.index >= conformal.index.max() - pd.Timedelta(days=14)
+    ]
+    fig, ax = plt.subplots(figsize=(9.0, 3.5))
+    ax.fill_between(
+        last.index, last["lower"], last["upper"],
+        color="#93c5fd", alpha=0.45, label="90% prequential interval",
+    )
+    ax.plot(last.index, last["y_true"], color=C["actual"], lw=1.0, label="actual")
+    ax.plot(last.index, last["lgbm"], color=C["pred"], lw=0.9, label="forecast")
+    ax.set_ylabel("EUR/MWh")
+    ax.set_title("Strictly prequential conformal intervals -- last 14 days")
+    ax.legend(ncols=3, fontsize=8)
+    save(fig, "10_conformal_path")
+
+
+def fig_conformal_coverage() -> None:
+    conformal = pd.read_csv(DATA / "conformal_diagnostics.csv")
+    coverage = conformal.groupby("hour")["covered"].mean()
+    fig, ax = plt.subplots(figsize=(7.5, 3.2))
+    colors = np.where(coverage >= 0.90, C["long"], C["short"])
+    ax.bar(coverage.index, coverage.values, color=colors)
+    ax.axhline(0.90, color="black", lw=0.9, ls="--", label="90% nominal")
+    ax.set_ylim(0.75, 1.0)
+    ax.set_xticks(range(0, 24, 2))
+    ax.set_xlabel("Delivery hour (CET/CEST)")
+    ax.set_ylabel("Empirical coverage")
+    ax.set_title("Conformal coverage reveals daytime undercoverage")
+    ax.legend(fontsize=8)
+    save(fig, "11_conformal_coverage")
+
+
+def fig_ablation() -> None:
+    frame = pd.read_csv(DATA / "ablation_metrics.csv").sort_values("mae")
+    labels = frame["specification"].str.replace("_", " ").str.title()
+    yerr = np.vstack([
+        frame["mae"] - frame["mae_ci_low"],
+        frame["mae_ci_high"] - frame["mae"],
+    ])
+    fig, ax = plt.subplots(figsize=(7.7, 3.6))
+    bars = ax.bar(
+        labels, frame["mae"], yerr=yerr, capsize=3,
+        color=[C["pred"]] + [C["ridge"]] * (len(frame) - 1),
+    )
+    ax.bar_label(bars, fmt="%.1f", fontsize=8, padding=3)
+    ax.set_ylabel("MAE (EUR/MWh)")
+    ax.set_title("Feature-family ablations under an identical walk-forward design")
+    ax.tick_params(axis="x", rotation=25)
+    save(fig, "12_ablation")
+
+
+def fig_signal_sensitivity() -> None:
+    frame = pd.read_csv(DATA / "signal_sensitivity.csv")
+    fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.3), sharex=True)
+    colors = {5: "#457b9d", 7: "#e63946", 14: "#2a9d8f"}
+    for window, group in frame.groupby("prompt_window"):
+        label = f"{window}-day prompt proxy"
+        axes[0].plot(
+            group["threshold"], group["hit_rate"],
+            marker="o", color=colors[window], label=label,
+        )
+        axes[1].plot(
+            group["threshold"], group["average_captured"],
+            marker="o", color=colors[window], label=label,
+        )
+    axes[0].set_ylabel("Directional hit rate")
+    axes[0].set_ylim(0.45, 0.9)
+    axes[1].set_ylabel("Average signed spread (EUR/MWh)")
+    for ax in axes:
+        ax.set_xlabel("Absolute z-score threshold")
+    axes[0].set_title("Direction")
+    axes[1].set_title("Magnitude")
+    axes[0].legend(fontsize=7)
+    fig.suptitle("Prompt-proxy signal sensitivity (descriptive, not tradable P&L)")
+    save(fig, "13_signal_sensitivity")
+
+
+def fig_error_quantiles(res: pd.DataFrame) -> None:
+    probabilities = np.linspace(0.50, 0.99, 50)
+    fig, ax = plt.subplots(figsize=(7.4, 3.4))
+    for model, color, label in (
+        ("naive_w", "#9ca3af", "Weekly naive"),
+        ("ridge", C["ridge"], "Ridge"),
+        ("lgbm", C["pred"], "LightGBM"),
+    ):
+        errors = (res[model] - res["y_true"]).abs()
+        ax.plot(probabilities, errors.quantile(probabilities), color=color, label=label)
+    ax.set_xlabel("Absolute-error quantile")
+    ax.set_ylabel("EUR/MWh")
+    ax.set_title("Forecast-error tails remain material despite mean skill")
+    ax.legend(fontsize=8)
+    save(fig, "14_error_quantiles")
 
 
 def main() -> None:
@@ -128,7 +303,15 @@ def main() -> None:
     fig_mae_by_hour(res)
     fig_importance(info)
     fig_fair_value(daily)
-    print("figures written:", sorted(p.name for p in FIGS.glob("*.png")))
+    fig_model_uncertainty()
+    fig_cumulative_skill(res)
+    fig_season_hour_heatmap(res)
+    fig_conformal_path()
+    fig_conformal_coverage()
+    fig_ablation()
+    fig_signal_sensitivity()
+    fig_error_quantiles(res)
+    print("figures written:", sorted(p.name for p in FIGS.glob("*.pdf")))
 
 
 if __name__ == "__main__":

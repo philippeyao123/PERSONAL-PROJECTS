@@ -1,0 +1,19 @@
+{
+  "title": "European Power Fair Value: Reproducible Day-Ahead Forecasting and Prompt-Proxy Diagnostics for the Germany-Luxembourg Market",
+  "upload_type": "software",
+  "description": "Source code, frozen evidence, figures, tests, and arXiv manuscript for a DE-LU day-ahead electricity-price forecasting study.",
+  "creators": [
+    {
+      "name": "Yao, Bathaix Philippe-Emmanuel"
+    }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "electricity price forecasting",
+    "DE-LU",
+    "day-ahead market",
+    "LightGBM",
+    "reproducibility"
+  ]
+}

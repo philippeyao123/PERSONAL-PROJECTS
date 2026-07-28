@@ -1,0 +1,72 @@
+name: European Power Fair Value
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Commodity/European Power Fair Value/**"
+      - ".github/workflows/european-power-arxiv.yml"
+  pull_request:
+    paths:
+      - "Commodity/European Power Fair Value/**"
+      - ".github/workflows/european-power-arxiv.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: "Commodity/European Power Fair Value"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: "Commodity/European Power Fair Value/requirements-paper.txt"
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-paper.txt
+      - name: Compile Python sources
+        run: python -m compileall -q run_all.py src tests scripts
+      - name: Validate frozen data
+        run: python src/qa.py
+      - name: Run tests
+        run: python -m pytest -q
+
+  paper-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-paper.txt
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: tectonic
+      - name: Regenerate paper inputs
+        run: |
+          python src/trading.py
+          python src/research.py
+          python src/make_figures.py
+          python scripts/generate_paper_artifacts.py
+      - name: Compile manuscript
+        run: |
+          mkdir -p output/pdf
+          cd paper
+          tectonic main.tex --outdir ../output/pdf --keep-intermediates
+      - name: Package arXiv source
+        run: |
+          cp output/pdf/main.bbl paper/main.bbl
+          bash scripts/package_arxiv.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: european-power-paper
+          path: |
+            Commodity/European Power Fair Value/output/pdf/main.pdf
+            Commodity/European Power Fair Value/output/pdf/european-power-fair-value-arxiv-source.tar.gz

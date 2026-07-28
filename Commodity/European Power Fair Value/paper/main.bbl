@@ -1,0 +1,76 @@
+\begin{thebibliography}{10}
+
+\bibitem{diebold1995}
+Francis~X. Diebold and Roberto~S. Mariano.
+\newblock Comparing predictive accuracy.
+\newblock {\em Journal of Business \& Economic Statistics}, 13(3):253--263,
+  1995.
+
+\bibitem{epex2022}
+{EPEX SPOT SE}.
+\newblock Fundamentals of the european electricity market.
+\newblock
+  \url{https://www.epexspot.com/sites/default/files/download_center_files/Factsheet\%20EU\%20IEM-2211.pdf},
+  2022.
+\newblock Factsheet, November 2022.
+
+\bibitem{energycharts}
+{Fraunhofer Institute for Solar Energy Systems ISE}.
+\newblock Energy-charts api, version 1.6.
+\newblock \url{https://api.energy-charts.info/}, 2026.
+\newblock Accessed 27 July 2026.
+
+\bibitem{friedman2001}
+Jerome~H. Friedman.
+\newblock Greedy function approximation: A gradient boosting machine.
+\newblock {\em The Annals of Statistics}, 29(5):1189--1232, 2001.
+
+\bibitem{hoerl1970}
+Arthur~E. Hoerl and Robert~W. Kennard.
+\newblock Ridge regression: Biased estimation for nonorthogonal problems.
+\newblock {\em Technometrics}, 12(1):55--67, 1970.
+
+\bibitem{jedrzejewski2022}
+Arkadiusz J{\k e}drzejewski, Jesus Lago, Grzegorz Marcjasz, and Rafa{\l} Weron.
+\newblock Electricity price forecasting: The dawn of machine learning.
+\newblock {\em IEEE Power and Energy Magazine}, 20(3):24--31, 2022.
+
+\bibitem{ke2017}
+Guolin Ke, Qi~Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei
+  Ye, and Tie-Yan Liu.
+\newblock {LightGBM}: A highly efficient gradient boosting decision tree.
+\newblock In {\em Advances in Neural Information Processing Systems 30}, pages
+  3146--3154, 2017.
+
+\bibitem{lago2021}
+Jesus Lago, Grzegorz Marcjasz, Bart De~Schutter, and Rafa{\l} Weron.
+\newblock Forecasting day-ahead electricity prices: A review of
+  state-of-the-art algorithms, best practices and an open-access benchmark.
+\newblock {\em Applied Energy}, 293:116983, 2021.
+
+\bibitem{newey1987}
+Whitney~K. Newey and Kenneth~D. West.
+\newblock A simple, positive semi-definite, heteroskedasticity and
+  autocorrelation consistent covariance matrix.
+\newblock {\em Econometrica}, 55(3):703--708, 1987.
+
+\bibitem{openmeteo}
+{Open-Meteo}.
+\newblock Historical forecast api documentation.
+\newblock \url{https://open-meteo.com/en/docs/historical-forecast-api}, 2026.
+\newblock Accessed 27 July 2026.
+
+\bibitem{weron2014}
+Rafa{\l} Weron.
+\newblock Electricity price forecasting: A review of the state-of-the-art with
+  a look into the future.
+\newblock {\em International Journal of Forecasting}, 30(4):1030--1081, 2014.
+
+\bibitem{xu2021}
+Chen Xu and Yao Xie.
+\newblock Conformal prediction interval for dynamic time-series.
+\newblock In {\em Proceedings of the 38th International Conference on Machine
+  Learning}, volume 139 of {\em Proceedings of Machine Learning Research},
+  pages 11559--11569, 2021.
+
+\end{thebibliography}

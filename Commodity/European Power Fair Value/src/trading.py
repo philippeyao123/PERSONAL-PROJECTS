@@ -13,9 +13,10 @@ Logic
 3. Signal: z-score of (fair value - prompt proxy) over a 60-day rolling
    window. |z| > SIGNAL_Z  -> long (cheap prompt) or short (rich prompt)
    front-week; otherwise neutral.
-4. Evaluation: each daily view is scored against the *next day's realised*
-   DA baseload minus the prompt proxy -- i.e. did the curve converge toward
-   our fair value? We report hit rate and average captured spread.
+4. Evaluation: each daily view is scored against the realised baseload over
+   D...D+6 minus the prompt proxy.  Right-censored observations at the end of
+   the sample are retained for live use but excluded from performance
+   statistics.
 
 Invalidation (documented in the trading note):
   - wind/solar D-1 forecast revision > 5 GW vs the run used by the model
@@ -58,15 +59,19 @@ def build_views() -> pd.DataFrame:
     fwd_spread = fwd_week - daily["prompt_proxy"]
     sign = daily["view"].map({"LONG prompt": 1, "SHORT prompt": -1, "NEUTRAL": 0})
     daily["captured"] = sign * fwd_spread
+    daily["is_evaluable"] = daily["captured"].notna()
     return daily.dropna(subset=["gap_z"])
 
 
 def main() -> None:
     daily = build_views()
-    active = daily[daily["view"] != "NEUTRAL"]
+    active = daily[(daily["view"] != "NEUTRAL") & daily["is_evaluable"]]
+    censored = daily[(daily["view"] != "NEUTRAL") & ~daily["is_evaluable"]]
     stats = {
         "days_evaluated": int(len(daily)),
+        "days_with_forward_outcome": int(daily["is_evaluable"].sum()),
         "active_days": int(len(active)),
+        "right_censored_active_days": int(len(censored)),
         "hit_rate": round(float((active["captured"] > 0).mean()), 3),
         "avg_captured_eur_mwh": round(float(active["captured"].mean()), 2),
         "median_captured_eur_mwh": round(float(active["captured"].median()), 2),

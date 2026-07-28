@@ -1,46 +1,48 @@
 {
   "metrics": {
     "naive_w": {
-      "MAE": 34.11,
-      "RMSE": 53.0,
-      "R2": 0.017,
+      "MAE": 32.89,
+      "RMSE": 51.21,
+      "R2": 0.034,
+      "bias": -0.87,
       "skill_vs_naive": 0.0
     },
     "ridge": {
-      "MAE": 17.45,
-      "RMSE": 26.23,
-      "R2": 0.759,
-      "skill_vs_naive": 0.488
+      "MAE": 17.11,
+      "RMSE": 25.41,
+      "R2": 0.762,
+      "bias": -3.23,
+      "skill_vs_naive": 0.48
     },
     "lgbm": {
-      "MAE": 13.97,
-      "RMSE": 22.81,
+      "MAE": 13.59,
+      "RMSE": 22.22,
       "R2": 0.818,
-      "skill_vs_naive": 0.59
+      "bias": -3.72,
+      "skill_vs_naive": 0.587
     }
   },
   "importances": {
-    "price_lag24": 3495,
-    "price_w1_mean": 2999,
-    "price_d1_mean": 2723,
-    "renew_chg_24": 2634,
-    "price_d1_std": 2633,
-    "fcst_renewables": 2627,
-    "price_lag168": 2358,
-    "price_lag48": 2325,
-    "fcst_wind_total": 2301,
-    "wx_temperature_2m": 1859,
-    "wx_wind_speed_100m": 1803,
-    "dow": 1691,
-    "wx_shortwave_radiation": 1509,
-    "month": 1470,
-    "fcst_solar": 1381,
-    "hour": 866,
-    "hour_cos": 610,
-    "hdd": 581,
-    "cdd": 577,
-    "hour_sin": 534,
-    "is_holiday": 174,
-    "is_weekend": 50
-  }
+    "price_lag24": 4060.4528301886794,
+    "price_w1_mean": 3448.943396226415,
+    "fcst_renewables": 3408.2264150943397,
+    "price_d1_std": 3268.3207547169814,
+    "price_d1_mean": 3145.0188679245284,
+    "renew_chg_24": 3087.943396226415,
+    "fcst_wind_total": 2945.7169811320755,
+    "price_lag168": 2907.5471698113206,
+    "price_lag48": 2845.1509433962265,
+    "fcst_solar": 1910.6415094339623,
+    "dow": 1684.8490566037735,
+    "month": 1627.566037735849,
+    "hour": 1242.245283018868,
+    "hour_cos": 720.1132075471698,
+    "hour_sin": 708.0566037735849,
+    "is_holiday": 131.77358490566039,
+    "is_weekend": 57.43396226415094
+  },
+  "test_days": 365,
+  "observations": 8760,
+  "refits": 53,
+  "retrain_every_days": 7
 }

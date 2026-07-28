@@ -1,96 +1,180 @@
-# European Power Fair Value — DE-LU Day-Ahead Forecasting & Prompt-Curve Views
+# European Power Fair Value
 
-**Author:** Philippe — **
-**Market:** Germany–Luxembourg (DE-LU) · **Option A:** next-day hourly prices
+Reproducible DE-LU day-ahead electricity-price forecasting, uncertainty
+diagnostics, and prompt-proxy research.
 
-A daily fair-value prototype: ingest public fundamentals, forecast tomorrow's 24 hourly EPEX day-ahead prices before the D-1 12:00 CET auction, translate the forecast into a front-week curve view, and auto-generate the morning desk note with one audited LLM call.
+**Author:** Bathaix Philippe-Emmanuel Yao  
+**Release:** 1.0.0  
+**Market:** Germany-Luxembourg day-ahead auction  
+**Primary horizon:** all hourly prices for delivery day D, forecast before D-1
+gate closure
 
-![Price history](figures/01_price_history.png)
+[Read the paper](output/pdf/european-power-fair-value-paper.pdf) ·
+[arXiv source package](output/pdf/european-power-fair-value-arxiv-source.tar.gz) ·
+[citation metadata](CITATION.cff)
 
----
+## Main result
 
-## 1. Data ingestion & QA
+The frozen experiment uses 15,576 hourly observations from 2024-08-31 through
+2026-06-11. The last 365 local delivery days form a strict expanding-window
+test; Ridge and LightGBM are refitted every seven days.
 
-| Series | Source | Notes |
-|---|---|---|
-| DA auction prices, DE-LU (hourly, EUR/MWh) | [energy-charts.info](https://energy-charts.info) `/price` (Fraunhofer ISE, CC BY 4.0) | 15-min MTUs since 2025 resampled to hourly means |
-| TSO day-ahead forecasts: solar, wind on/offshore (MW) | energy-charts `/public_power_forecast` | **ex-ante** values — available before the auction |
-| Weather forecasts: temp 2 m, wind 100 m, SW radiation | [Open-Meteo Historical *Forecast* API](https://open-meteo.com) | forecasts **as originally issued**, not reanalysis |
+| Model | MAE (EUR/MWh) | RMSE | Bias |
+|---|---:|---:|---:|
+| Weekly naive, lag 168 h | 32.89 | 51.21 | -0.87 |
+| Ridge | 17.11 | 25.41 | -3.23 |
+| **Deterministic LightGBM** | **13.59** | **22.22** | **-3.72** |
 
-Coverage: **2024-09-01 → 2026-06-11, 15 576 hourly rows**, UTC index. No API keys required; every raw response is cached under `data/raw/` (resumable, rate-limit friendly with pacing + exponential backoff).
+The LightGBM MAE has a delivery-day block-bootstrap 95% interval of
+12.77-14.44 EUR/MWh. Daily absolute-loss comparisons remain significant
+against both baselines with seven-lag HAC standard errors.
 
-**Leakage discipline.** Every exogenous feature is a *forecast* that existed before the D-1 auction, and price lags are restricted to ≥ 24 h (D-1 prices are published at D-2 12:45 CET). The backtest therefore replicates the live information set exactly.
+![Model uncertainty](figures/07_model_uncertainty.png)
 
-**QA (`src/qa.py` → `reports/qa_report.json`): status PASS.** Eight checks: hourly-grid completeness, duplicate timestamps, per-column nulls, physical range bounds, negative-price share, robust-z spike detection, stale-feed runs, and DST integrity (every local day has 23/24/25 hours). Structural failures exit non-zero; market features only warn — e.g. **5.92 % of hours print negative**, which is a real property of DE-LU under renewables saturation and is deliberately kept in the dataset.
+## Information-set discipline
 
-## 2. Forecasting & validation (Option A)
+The primary model has 17 features:
 
-Three models, identical features, **walk-forward validation over the last 180 delivery days**: expanding training window, refit every 7 days, full delivery days predicted ahead — the exact cadence of a live D-1 process.
+- lagged prices and shifted rolling price statistics;
+- TSO day-ahead solar and wind forecasts;
+- the day-over-day renewable-forecast change;
+- local hour, weekday, month, weekend, and holiday encodings.
 
-| Model | MAE (€/MWh) | RMSE | R² | Skill vs naive |
-|---|---|---|---|---|
-| Naive (same hour, lag-168 h) | 34.11 | 53.00 | 0.02 | — |
-| Ridge (baseline) | 17.45 | 26.23 | 0.76 | +48.8 % |
-| **LightGBM (improved)** | **13.97** | **22.81** | **0.82** | **+59.0 %** |
+The Open-Meteo Historical Forecast API stitches the first hours of successive
+model runs; it does not preserve a fixed D-1 lead time for every target hour.
+Weather variables are therefore excluded from the primary claim and retained
+only in a clearly labelled sensitivity. That sensitivity changes MAE by less
+than 1%.
 
-![Predictions vs actuals](figures/02_pred_vs_actual.png)
-![Scatter](figures/03_scatter.png)
-![MAE by hour](figures/04_mae_by_hour.png)
+Removing renewables raises primary-model MAE by about 85%, while using
+renewables and calendar variables without price history gives 17.80 EUR/MWh.
+The two feature families are complementary.
 
-Errors concentrate in the **evening ramp (17–21 h)**, when solar rolls off into uncertain wind — exactly where marginal-unit switching makes prices most convex. Feature importance confirms the thesis that **well-engineered features beat model complexity at the DA stage**: recent price levels, the day-over-day renewables swing and the renewables forecasts dominate.
+![Feature ablation](figures/12_ablation.png)
 
-![Feature importance](figures/05_feature_importance.png)
+## Uncertainty and model risk
 
-## 3. Prompt-curve translation
+A rolling, strictly prequential residual interval achieves 90.07% empirical
+coverage against a 90% nominal target. Aggregate calibration is not uniform:
+daylight and evening hours undercover, while overnight intervals are
+conservative.
 
-`src/trading.py` converts the hourly forecast into a daily **fair-value baseload** and compares it with a **prompt proxy** — the trailing 7-day realised DA baseload (front-week EEX settlements are not freely redistributable; prompt forwards settle close to expected DA outturn, and with a market-data licence the same code plugs real quotes straight in).
+![Conformal coverage](figures/11_conformal_coverage.png)
 
-Signal: 60-day rolling **z-score of (fair value − prompt)**; |z| > 0.75 ⇒ LONG/SHORT front-week, else NEUTRAL. Views are scored against the **realised baseload of the delivered week (D…D+6)** — deliberately beyond the model's one-day horizon, so a correct call requires the DA-vs-curve divergence to persist.
+The point model is also weakest in price tails:
 
-| Out-of-sample (144 days) | |
+- MAE is 21.59 EUR/MWh on negative-price hours;
+- MAE is 61.12 EUR/MWh above 200 EUR/MWh;
+- only 53.5% of realized above-200 hours are forecast above 200.
+
+These diagnostics are part of the result, not hidden post-processing.
+
+## Prompt-proxy diagnostic
+
+The hourly forecast is averaged into next-day baseload fair value and compared
+with a trailing day-ahead baseload proxy. The declared seven-day proxy and
+absolute z-score threshold of 0.75 produce 144 evaluable active observations,
+a 74.3% directional hit rate, and a mean signed forward-week spread of
+13.25 EUR/MWh.
+
+This is **not a forward-market backtest**. The proxy is not a licensed EEX
+front-week settlement, and the analysis excludes transaction costs, execution,
+margin, and the forward risk premium. Right-censored end-of-sample outcomes
+are excluded explicitly.
+
+![Prompt sensitivity](figures/13_signal_sensitivity.png)
+
+## Data and evidence
+
+| Artifact | Purpose |
 |---|---|
-| Active views | 63 (29 long / 34 short) |
-| **Hit rate** | **76.2 %** |
-| Avg captured spread | **+17.23 €/MWh** per active day |
+| `data/dataset.csv` | Frozen hourly target and source variables |
+| `data/predictions_oos.csv` | 365-day hourly forecasts |
+| `data/model_comparison.csv` | Metrics and block-bootstrap intervals |
+| `data/dm_tests.csv` | HAC loss-differential tests |
+| `data/ablation_metrics.csv` | Feature-family evidence |
+| `data/regime_metrics.csv` | Seasonal, hourly, price, and renewable regimes |
+| `data/conformal_diagnostics.csv` | Timestamp-level intervals and coverage |
+| `data/signal_sensitivity.csv` | Prompt-window and threshold grid |
+| `reports/research_metrics.json` | Paper results and SHA-256 fingerprints |
 
-![Fair value vs prompt](figures/06_fair_value_vs_prompt.png)
+Prices and day-ahead renewable forecasts come from the Fraunhofer ISE
+Energy-Charts API. Weather sensitivity data come from the Open-Meteo
+Historical Forecast API. External API responses are cached on first ingestion;
+the committed dataset is the authoritative paper input.
 
-**Use / invalidation** (full note in `reports/trading_note.md`): position sizes with |z| and is re-run every morning; flatten on (1) intraday TSO revision of D+1 wind+solar > 5 GW, (2) REMIT unplanned outage > 2 GW, (3) yesterday's model error > 2× its trailing 30-day std, (4) fuel/carbon shocks (TTF/EUA > 5 %) — the DA model carries no fuel features, so fuel-led curve moves are out of scope.
+## Reproduce the paper
 
-## 4. AI/LLM component
-
-`src/ai_commentary.py` automates the last manual step of the daily process: **writing the morning note**. One structured call to the Anthropic Messages API (`claude-sonnet-4-6`) receives a JSON context computed entirely by the pipeline — fair value, gap z-score, drivers, OOS MAE, QA status — and verbalises it in two paragraphs.
-
-- **The LLM never produces numbers** — it only narrates pipeline output, eliminating hallucination risk on quantitative content.
-- **Full prompt + raw response logged** to `logs/llm_call_*.json` (auditable); see `logs/llm_call_example_response.json` and the resulting `reports/morning_note.md`.
-- `--dry-run` builds and logs the exact prompt without credentials (used in CI).
-
-## Repository structure & reproduction
-
-```
-powerfv/
-├── run_all.py             # one-command pipeline
-├── requirements.txt
-├── submission.csv         # OOS predictions (id = UTC hour, y_pred)
-├── CASE_STUDY.md          # 3-page write-up
-├── src/                   # config, ingest, qa, features, models, trading,
-│                          #   ai_commentary, make_figures
-├── data/                  # dataset.csv, predictions_oos.csv, daily_views.csv, raw/ cache
-├── reports/               # qa_report.json, model_metrics.json, trading_note.md, morning_note.md
-├── figures/               # 6 PNGs used above
-└── logs/                  # LLM prompts & responses
-```
+Python 3.12 is recommended.
 
 ```bash
-pip install -r requirements.txt
-python run_all.py              # full pipeline, AI step in dry-run
-ANTHROPIC_API_KEY=... python run_all.py --live-ai
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-paper.txt
+
+python src/qa.py
+python src/models.py
+python src/trading.py
+python src/research.py
+python src/make_figures.py
+python scripts/generate_paper_artifacts.py
+python -m pytest -q
+
+TECTONIC_BIN=tectonic bash scripts/build_paper.sh
+bash scripts/package_arxiv.sh
 ```
 
-First run pulls ~21 months of data (a few minutes due to polite API pacing); all responses are cached so reruns are instant. Tested on Python 3.12.
+On macOS, the standard LightGBM wheel requires OpenMP. Install `libomp`, or
+build LightGBM from source with `USE_OPENMP=OFF`.
 
-## Limitations & next steps
+The ingestion stage is separate because public archives can revise historical
+values:
 
-- The prompt proxy is a stand-in for EEX front-week settlements; with licensed quotes, the signal would be measured against actual tradable marks and transaction costs.
-- No fuel/carbon/interconnector features: the model prices weather and renewables, not the fuel stack — by design at the DA horizon, but a CSS/CDS spread feature is the natural next step for the curve leg.
-- Probabilistic extension: quantile LightGBM for P10/P90 bands would let the signal size on forecast dispersion, not just the point gap.
+```bash
+python src/ingest.py
+```
+
+Running ingestion will legitimately change the dataset fingerprint.
+
+## Repository layout
+
+```text
+.
+├── data/                    frozen inputs and executable evidence
+├── figures/                 README PNGs and vector PDFs
+├── paper/                   LaTeX manuscript, tables, figures, metadata
+├── reports/                 QA, model, research, and desk-note outputs
+├── scripts/                 paper generation, reproduction, arXiv packaging
+├── src/                     ingestion, features, models, research diagnostics
+├── tests/                   leakage, reconciliation, and artifact tests
+├── CITATION.cff
+├── codemeta.json
+└── requirements-paper.txt
+```
+
+## AI commentary
+
+`src/ai_commentary.py` can turn pipeline-computed values into a short desk
+note. It is isolated from the scientific calculations:
+
+- the language model never computes paper numbers;
+- prompts and responses are logged;
+- dry-run mode performs no API call;
+- no table, figure, metric, or test depends on generated text.
+
+## Limitations
+
+- One out-of-sample year is not a multi-cycle market benchmark.
+- Upstream public archives may revise historical forecasts.
+- Load, outages, fuel, carbon, and interconnector variables are absent.
+- The symmetric interval has material hour-conditional miscalibration.
+- The prompt proxy is not a tradable forward price.
+- The artifact is research software, not a production execution system.
+
+See the paper for the full methodology, equations, statistical assumptions,
+and validation matrix.
+
+## License
+
+Code is released under the MIT License. Upstream datasets retain their own
+terms and attribution requirements.

@@ -1,0 +1,15 @@
+\begin{tabular}{llrrr}
+\toprule
+Price regime (EUR/MWh) & Model & $n$ & MAE & Bias \\
+\midrule
+Price $<0$ & Weekly naive & 538 & 55.22 & +42.39 \\
+Price $<0$ & Ridge & 538 & 21.47 & +0.99 \\
+Price $<0$ & LightGBM & 538 & 21.59 & +1.41 \\
+$0\leq$ price $<200$ & Weekly naive & 8,065 & 29.74 & -1.60 \\
+$0\leq$ price $<200$ & Ridge & 8,065 & 15.69 & -2.18 \\
+$0\leq$ price $<200$ & LightGBM & 8,065 & 12.14 & -3.33 \\
+Price $\geq 200$ & Weekly naive & 157 & 118.34 & -111.46 \\
+Price $\geq 200$ & Ridge & 157 & 74.99 & -71.42 \\
+Price $\geq 200$ & LightGBM & 157 & 61.12 & -40.96 \\
+\bottomrule
+\end{tabular}

@@ -9,9 +9,9 @@ call (Anthropic Messages API, model claude-sonnet-4-6).
 
 Design choices
 --------------
-- The LLM never produces numbers: every figure is computed by the pipeline
-  and injected into the prompt. The model only verbalises, which removes
-  hallucination risk on the quantitative content.
+- The LLM is instructed not to produce new numbers: every figure is computed
+  by the pipeline and injected into the prompt. The model only verbalises,
+  which reduces but does not eliminate generation risk.
 - Full prompt and raw response are logged to logs/ with a timestamp, so the
   AI step is auditable and reproducible.
 - `--dry-run` builds and logs the exact prompt without an API call (useful

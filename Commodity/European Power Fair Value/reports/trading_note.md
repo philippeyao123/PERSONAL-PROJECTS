@@ -1,8 +1,8 @@
 # Prompt-curve view -- 2026-06-11
 
-**Model fair value (next-day baseload):** 104.22 EUR/MWh
+**Model fair value (next-day baseload):** 106.07 EUR/MWh
 **Prompt proxy (trailing 7d DA baseload):** 90.92 EUR/MWh
-**Gap:** +13.30 EUR/MWh (z = +0.68)
+**Gap:** +15.15 EUR/MWh (z = +0.69)
 **View:** NEUTRAL
 
 ## How the view is used
@@ -19,7 +19,7 @@
 4. Fuel/carbon shock (TTF or EUA move > 5%) -- the DA model carries no fuel
    features, so curve moves driven by fuels are out of model scope.
 
-## Out-of-sample evaluation (144 days)
-- Active views: 63 (29 long / 34 short)
-- Hit rate: 76.2%
-- Avg captured spread: +17.23 EUR/MWh per active day
+## Out-of-sample evaluation (329 days)
+- Active views: 144 (70 long / 74 short)
+- Hit rate: 74.3%
+- Avg captured spread: +13.25 EUR/MWh per active day

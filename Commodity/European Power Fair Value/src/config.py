@@ -24,7 +24,7 @@ CITIES = {
 }
 WEATHER_VARS = ["temperature_2m", "wind_speed_100m", "shortwave_radiation"]
 
-TEST_DAYS = 180                # out-of-sample window (last N days)
+TEST_DAYS = 365                # full-year out-of-sample window (last N delivery days)
 RETRAIN_EVERY = 7              # retrain cadence (days)
 
 SIGNAL_Z = 0.75                # z-score threshold for non-neutral view

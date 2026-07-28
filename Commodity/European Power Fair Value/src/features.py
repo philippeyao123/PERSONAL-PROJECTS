@@ -7,10 +7,13 @@ At forecast time (D-1 morning) the following are known:
   - all auction prices up to and including delivery day D-1
     (published at D-2 ~12:45 CET)  -> price lags of 24h, 48h, 168h are valid
   - TSO day-ahead forecasts of wind & solar for day D
-  - weather forecasts for day D (we use Open-Meteo forecasts *as issued*)
   - the calendar
-Nothing else enters the feature set, so the backtest replicates the live
-information set exactly.
+These variables form FEATURES, the primary publication specification.
+
+Open-Meteo's Historical Forecast API stitches early hours from successive
+model runs and does not preserve one fixed D-1 lead time for every target
+hour.  Weather variables are therefore retained in ALL_FEATURES only for the
+explicitly labelled weather-augmented sensitivity.
 """
 from __future__ import annotations
 
@@ -60,14 +63,26 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-FEATURES = [
+PRICE_FEATURES = [
     "price_lag24", "price_lag48", "price_lag168",
     "price_d1_mean", "price_d1_std", "price_w1_mean",
+]
+RENEWABLE_FEATURES = [
     "fcst_solar", "fcst_wind_total", "fcst_renewables", "renew_chg_24",
+]
+WEATHER_FEATURES = [
     "wx_temperature_2m", "wx_wind_speed_100m", "wx_shortwave_radiation",
     "hdd", "cdd",
+]
+CALENDAR_FEATURES = [
     "hour", "dow", "month", "is_weekend", "is_holiday", "hour_sin", "hour_cos",
 ]
+# Primary publication specification: every covariate has a documented D-1
+# information set.  Open-Meteo's stitched historical-forecast series is kept
+# for the explicitly labelled weather-augmented sensitivity only; it does not
+# preserve a fixed day-ahead vintage for every target hour.
+FEATURES = PRICE_FEATURES + RENEWABLE_FEATURES + CALENDAR_FEATURES
+ALL_FEATURES = FEATURES + WEATHER_FEATURES
 TARGET = "price"
 
 
@@ -76,8 +91,8 @@ def load_features() -> pd.DataFrame:
     df.index = pd.to_datetime(df.index, utc=True)
     feats = build_features(df)
     # forward-fill tiny gaps in exogenous forecasts (never the target)
-    feats[FEATURES] = feats[FEATURES].ffill(limit=3)
-    feats = feats.dropna(subset=FEATURES + [TARGET])
+    feats[ALL_FEATURES] = feats[ALL_FEATURES].ffill(limit=3)
+    feats = feats.dropna(subset=ALL_FEATURES + [TARGET])
     return feats
 
 
