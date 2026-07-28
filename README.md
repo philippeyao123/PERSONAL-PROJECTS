@@ -22,13 +22,13 @@ The rest are research notebooks and prototypes.
 
 ## 🔑 Start Here — Flagship Projects
 
-> Four production-grade projects, one per asset class. If you review only a
-> few, review these.
+> Two standalone quantitative libraries plus a counterparty-risk engine. If
+> you review only a few projects, review these.
 
 | Project | Asset Class | What makes it desk-relevant | Status |
 |---|---|---|---|
-| [G2++ Swaption Engine](./Rates%20and%20IR%20Derivatives/Swaptions%20Engine) | Rates | Two-factor Gaussian model; semi-analytic European **validated vs Monte Carlo (<1%)**; Bermudan via Longstaff-Schwartz; calibration to vol surface (**sub-2bp RMSE**); bucketed DV01 / vega / scenario risk | 🟢 tests + CI |
-| [Multi-Asset Alpha Factory](./Systematic%20Trading%20and%20Alpha/Alpha%20Factory) | Systematic | Cross-sectional factor pipeline with **point-in-time data**, **deflated Sharpe (Bailey-López de Prado)**, realistic costs, capacity analysis; includes a **critical replication of Time-Series Momentum** showing post-publication decay | 🟢 tests + CI |
+| [qf-rates — Rates Pricing & Risk Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/qf-rates) | Rates | C++20 library covering curves, swaps, Black-76/Bachelier, G2++, European and Bermudan swaptions, calibration, Monte Carlo, LSM, DV01, volatility scenarios and XVA; independently **validated against QuantLib and Monte Carlo** | 🟢 package + tests + CI |
+| [Systematic Research — Point-in-Time Research Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/systematic-research) | Systematic | Python research framework with **point-in-time data**, survivorship-bias controls, realistic costs and market impact, walk-forward validation, PSR/DSR, capacity, attribution and deterministic experiment tracking | 🟢 package + tests + CI |
 | [XVA Pricing Engine](./Rates%20and%20IR%20Derivatives/XVA%20Pricing%20Engine%20-%20Interest%20Rate%20Swaps) | Credit / Counterparty | CVA / DVA / FVA on IR swaps; exposure simulation under Hull-White, wrong-way risk, netting-set aggregation, SIMM capital | Engine + analysis |
 
 ---
@@ -37,16 +37,22 @@ The rest are research notebooks and prototypes.
 
 ### 🟢 Rates & IR Derivatives
 
-#### G2++ Swaption Engine *(production-grade: tests + CI)*
-End-to-end rates-desk toolkit: calibrate a two-factor Gaussian (G2++) model to
-a swaption volatility surface, price European swaptions semi-analytically and
-Bermudan swaptions by Longstaff-Schwartz, and run a bump-and-revalue risk
-engine (bucketed DV01, vega, parallel / steepener / flattener / vol scenarios).
-The semi-analytic European price is validated against an independent
-curve-consistent Monte Carlo to within MC noise; the LSM Bermudan is checked to
-equal the European at a single exercise date and to exceed it once early
-exercise is allowed.
-`G2++ · Bachelier/normal vol · LSM · SABR · Calibration · DV01 · Vega`
+#### [qf-rates — Rates Pricing & Risk Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/qf-rates) *(production-grade: package + tests + CI)*
+A modern C++20 quantitative-finance library for interest-rate derivatives
+pricing, calibration and risk. It implements deterministic and interpolated
+yield curves, vanilla swaps, Black-76 and Bachelier options, the two-factor
+Gaussian G2++ model, European swaptions by joint-Gaussian quadrature and
+independent Monte Carlo, and Bermudan swaptions by Longstaff-Schwartz.
+
+The library also includes normal-volatility calibration, formal
+variance-reduction measurements, LSM convergence tables, bucketed and parallel
+DV01, vega, curve and volatility scenarios, exposure simulation, netting,
+wrong-way risk and simplified CVA/DVA/FVA/SIMM/MVA. Python bindings expose the
+principal pricing and risk workflow. Vanilla swaps match QuantLib to machine
+precision, the G2++ European price is within 1%, and calibration is
+cross-checked against an independent QuantLib implementation.
+
+`C++20 · CMake · G2++ · Bachelier · Monte Carlo · LSM · DV01 · XVA · pybind11 · QuantLib`
 
 #### XVA Pricing Engine — Interest Rate Swaps
 CVA, DVA and FVA for vanilla IR swaps. Exposure (EPE/ENE) simulation under
@@ -62,15 +68,22 @@ and LSM. *(Superseded by the G2++ engine above for two-factor curve risk.)*
 
 ### 🟢 Systematic Trading & Alpha
 
-#### Multi-Asset Alpha Factory *(production-grade: tests + CI)*
-Cross-sectional systematic alpha platform built to refuse the three ways
-backtests usually lie: look-ahead/survivorship bias (point-in-time loader,
-delisted names retained), gross-Sharpe theatre (all results net of a
-square-root market-impact cost model), and multiple-testing inflation (deflated
-and probabilistic Sharpe ratios). Includes capacity analysis and a **critical
-replication of Moskowitz-Ooi-Pedersen Time-Series Momentum** demonstrating
-post-publication Sharpe decay.
-`PIT data · Deflated Sharpe · IC/IR · Capacity · Walk-forward · TSMOM replication`
+#### [Systematic Research — Point-in-Time Research Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/systematic-research) *(production-grade: package + tests + CI)*
+A typed Python quantitative-research library designed to turn a hypothesis into
+a reproducible and auditable result. Its point-in-time data contract retains
+removed assets, records when information became available and rejects signals
+that use future information. The research pipeline covers features, signals,
+constrained portfolio construction, cost-aware vectorized backtesting,
+walk-forward validation, risk, capacity, attribution and reporting.
+
+Linear transaction costs, square-root market impact, turnover and participation
+limits prevent gross-Sharpe theatre. Statistical validation includes
+probabilistic and deflated Sharpe ratios, IC/IR, IC decay, benchmarks and
+placebo tests. Every experiment records its configuration, seed, data hash and
+software versions. The package supports Python 3.9–3.12 and ships with 40 tests,
+more than 80% branch coverage, Ruff, mypy and CI.
+
+`Python · Point-in-time data · PSR/DSR · IC/IR · Capacity · Walk-forward · pytest · mypy`
 
 
 #### Volatility Arbitrage — Implied vs Realised
@@ -185,10 +198,10 @@ importance-sampling variance reduction.
 
 | Category | Tools |
 |---|---|
-| **Languages** | Python, SQL, R, C++ (basic) |
+| **Languages** | Python, C++20, SQL, R |
 | **Quant Libraries** | QuantLib, NumPy, SciPy, pandas, statsmodels |
 | **ML/DL** | scikit-learn, PyTorch, TensorFlow, LightGBM |
-| **Engineering** | pytest, ruff, mypy, GitHub Actions (CI on flagship repos) |
+| **Engineering** | CMake, pybind11, Catch2, pytest, Ruff, mypy, clang-tidy, ASan/UBSan, GitHub Actions |
 | **Visualisation** | Matplotlib, Plotly, Streamlit |
 
 ---
@@ -203,4 +216,4 @@ ship with unit tests and CI. Market data is sourced from public APIs
 
 ---
 
-*Last updated: June 2026*
+*Last updated: July 2026*
