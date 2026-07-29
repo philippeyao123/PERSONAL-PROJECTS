@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use qf-rates in academic work, please cite the software and the accompanying paper."
+title: "qf-rates"
+type: software
+authors:
+  - family-names: "Yao"
+    given-names: "Bathaix Philippe-Emmanuel"
+repository-code: "https://github.com/philippeyao123/qf-rates"
+url: "https://github.com/philippeyao123/qf-rates"
+version: "0.1.0"
+date-released: "2026-07-27"
+license: MIT
+keywords:
+  - computational finance
+  - interest rates
+  - G2++
+  - swaptions
+  - Monte Carlo
+  - C++20
+preferred-citation:
+  type: article
+  title: "Reproducible Numerical Validation of G2++ Swaption Pricing: Quadrature, Monte Carlo, Calibration, and Bermudan Exercise"
+  authors:
+    - family-names: "Yao"
+      given-names: "Bathaix Philippe-Emmanuel"
+  year: 2026
+  notes: "Preprint; add the arXiv identifier after submission."

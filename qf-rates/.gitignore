@@ -13,4 +13,10 @@
 *.profraw
 *.profdata
 .DS_Store
-
+/paper/build/
+/output/pdf/*.aux
+/output/pdf/*.bbl
+/output/pdf/*.blg
+/output/pdf/*.log
+/output/pdf/*.out
+/output/pdf/*.synctex.gz

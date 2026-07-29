@@ -1,0 +1,1631 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\setlength{\emergencystretch}{1em}
+\numberwithin{equation}{section}
+
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}[proposition]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[proposition]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[proposition]{Remark}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  citecolor=blue!55!black,
+  urlcolor=blue!55!black,
+  pdftitle={Reproducible Numerical Validation of G2++ Swaption Pricing: Quadrature, Monte Carlo, Calibration, and Bermudan Exercise},
+  pdfauthor={Bathaix Philippe-Emmanuel Yao}
+}
+\graphicspath{{figures/}}
+\input{generated/results_macros.tex}
+
+\title{Reproducible Numerical Validation of G2++ Swaption Pricing:\\
+Quadrature, Monte Carlo, Calibration, and Bermudan Exercise}
+\author{Bathaix Philippe-Emmanuel Yao}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Numerical implementations of the same interest-rate model can disagree because
+of integration rules, discretization, conventions, calibration choices, or
+exercise-policy estimation. This paper asks how much confidence can be assigned
+to G2++ swaption prices and risks when these error sources are made explicit. A
+reproducible validation protocol compares three-dimensional Gauss--Hermite
+quadrature, independently time-stepped Monte Carlo, and QuantLib. The external
+comparison spans \QuantLibGridCells{} European payer swaptions across five
+parameter regimes, three expiries, three tenors, and three moneyness levels.
+Among the \QuantLibGridMaterialCells{} cells worth at least one basis point of
+notional in QuantLib, the absolute relative price difference has median
+\QuantLibGridMedianRelativeError{} and 95th percentile
+\QuantLibGridNinetyFifthRelativeError; the maximum absolute price gap over the full grid
+is \QuantLibGridMaxDifferenceBp{} basis points of notional. Fixed-strike curve
+DV01 and a controlled joint G2++ volatility bump agree within
+\RiskMaxDVOneDifference{} and \RiskMaxVolatilityDifference, respectively, over
+four representative cases. Coupled paths isolate time-discretization bias,
+while path-count experiments report Monte Carlo confidence intervals. Eight
+calibration starts expose local-solution and parameter-identification risk, and
+Longstaff--Schwartz policies are evaluated on paths independent of their
+training samples. The accompanying \texttt{qf-rates} C++20 artifact regenerates
+all tests, CSV evidence, tables, and figures. The contribution is not a new
+short-rate model; it is a transparent error-budget and cross-engine validation
+study whose scope and failure modes can be independently audited.
+\end{abstract}
+
+\begin{sloppypar}
+\noindent\textbf{Keywords:} computational finance; interest-rate derivatives;
+G2++; swaption; Monte Carlo; Longstaff--Schwartz; reproducible research; C++20.
+\end{sloppypar}
+
+\section{Introduction}
+
+The mathematical description of an interest-rate model is only one part of a
+usable pricing system. A practical implementation also fixes curve conventions,
+cash-flow signs, interpolation, schedule generation, random-number handling,
+integration rules, optimizer bounds, and reporting units. Two programs that claim
+to implement the same model can consequently disagree for reasons that have
+nothing to do with the stochastic differential equations. The discrepancy is
+harder to diagnose when the implementation is hidden inside a monolithic
+application or a notebook with implicit state.
+
+This paper studies those numerical disagreements for G2++ European and Bermudan
+swaptions. The associated \texttt{qf-rates} C++20 library is the executable
+research artifact, not the research question. It makes curve conventions,
+quadrature, simulation, calibration, bump-and-revalue risk, and exercise-policy
+estimation inspectable. The intended use is research, education, and numerical
+prototyping; it is not presented as a production trade-capture, collateral,
+regulatory-capital, or market-data system.
+
+The scientific value of the artifact is primarily methodological. First, the
+material G2++ European price is reached by two numerical routes that do not share
+their central integration logic: deterministic joint-Gaussian quadrature and
+time-stepped Monte Carlo. Second, European swaption prices are compared with
+QuantLib \citep{quantlib} over a predeclared 135-cell
+expiry--tenor--moneyness--parameter grid, and selected price discrepancies are
+propagated into finite-difference sensitivities. Third, stochastic claims are supported
+by measured standard errors and fixed convergence grids rather than a single
+seed. Fourth, paper tables and figures are generated from committed CSV files
+that the validation executable can reproduce. These practices follow the
+general principle that computational claims should be tied to executable,
+versioned evidence \citep{sandve2013}.
+
+The specific contributions are:
+\begin{enumerate}
+  \item a convention-aligned, \QuantLibGridCells-cell external validation grid
+  spanning expiry, tenor, moneyness, and five G2++ parameter regimes;
+  \item an error-propagation experiment comparing fixed-strike curve DV01 and a
+  joint model-volatility bump across two independent implementations;
+  \item an order-8 tensor Gauss--Hermite engine checked by independent Monte
+  Carlo, including confidence-interval and coupled time-step convergence tests;
+  \item deterministic multi-start calibration and Longstaff--Schwartz policy
+  evaluation on simulation paths independent of the training sample;
+  \item measured variance-reduction and wrong-way-risk sensitivity experiments;
+  \item an end-to-end C++20 reproducibility artifact comprising tests, CSV
+  output, plotting code, metadata, continuous integration, and an arXiv source
+  package.
+\end{enumerate}
+
+No claim of a new pricing model or closed-form formula is made. The objective is
+to show what can be concluded from a compact open implementation, what remains
+implementation-specific, and how numerical evidence should be bounded.
+
+\subsection{Research questions and evidence design}
+
+The study is organized around four questions. First, after conventions are
+aligned, how closely do independent G2++ European swaption engines agree across
+expiry, tenor, strike, and parameter regime? Second, do remaining pricing gaps
+materially affect curve and volatility sensitivities? Third, how much additional
+uncertainty is introduced by Monte Carlo time discretization, calibration
+initialization, regression bases, random seeds, and path reuse? Fourth, can every
+reported result be regenerated by a versioned pipeline?
+
+These questions determine the hierarchy of evidence. Exact equalities are used
+when the mathematical object admits them: curve-node reproduction, swap par
+value, put--call parity, and the G2++ initial term structure. Statistical
+intervals are used for simulation output. Cross-implementation comparisons are
+performed only after curve, schedule, compounding, and notional conventions have
+been aligned. Optimizer output is treated as a set of candidate local solutions,
+not as proof of parameter identification. LSM policies are evaluated both on
+their training paths and on independently simulated paths. Finally, the complete
+stress surface is retained rather than presenting only a favorable slice.
+
+Table~\ref{tab:baseline-design} fixes the baseline configuration before any
+results are examined. The deliberately small synthetic quote set is not intended
+to represent a liquid market surface. Its purpose is to make all calculations
+fast enough for continuous integration while still exposing the numerical
+issues that occur in a full implementation.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Baseline experimental configuration. Rates and volatilities are
+  absolute annualized quantities.}
+  \label{tab:baseline-design}
+  \begin{tabular}{p{0.30\linewidth}p{0.58\linewidth}}
+    \toprule
+    Item & Specification\\
+    \midrule
+    Initial curve & flat continuously compounded rate of 2.5\%\\
+    G2++ parameters & $a=0.10$, $b=0.30$, $\sigma=0.010$,
+      $\eta=0.015$, $\rho=-0.70$\\
+    External validation grid & expiries 1Y/2Y/5Y, tenors 2Y/5Y/10Y,
+      payer moneyness $-100$/0/$+100$ bp, five G2++ regimes\\
+    Deterministic integration & order-8 tensor Gauss--Hermite rule,
+      $8^3=512$ nodes\\
+    Monte Carlo & exact OU transitions, trapezoidal discount integral,
+      antithetic pairs, explicit seeds\\
+    Calibration quotes & expiries 1Y/2Y/3Y crossed with tenors 5Y/10Y;
+      six absolute normal volatilities\\
+    Bermudan claim & exercise at 1Y/2Y/3Y, maturity 6Y, annual fixed leg,
+      strike 2.6\%\\
+    Stress surface & five parameter regimes, three expiries, three tenors,
+      three moneyness levels; 135 prices\\
+    Exposure illustration & 7Y swap, six future exposure dates,
+      10,000 paths, proxy $\beta\in\{0,5,\ldots,30\}$\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The remainder of the paper follows the computation. Section~\ref{sec:conventions}
+defines instruments and conventions. Section~\ref{sec:g2} derives the Gaussian
+moments, bond formula, deterministic quadrature, Monte Carlo estimator, and
+coupled discretization experiment. Section~\ref{sec:calibration} treats
+calibration and Bermudan exercise, including independent policy evaluation.
+Section~\ref{sec:experiments} develops cross-library, stress, and
+variance-reduction evidence. Sections~\ref{sec:risk} and~\ref{sec:artifact}
+cover risk, reproducibility, and software design. The appendices expose complete
+diagnostic tables, analytical moment formulas, algorithms, validation criteria,
+and reproduction commands.
+
+\section{Related work}
+
+Bachelier's early treatment of speculation introduced a normal model of price
+increments \citep{bachelier1900}. In modern fixed-income practice, the Bachelier
+formula remains useful for options quoted in normal volatility, including
+negative-rate regimes. Black's forward option model \citep{black1976} supplies
+the corresponding lognormal convention used here for Black--76 prices and
+Greeks.
+
+The G2++ model is a two-factor Gaussian short-rate model in which a deterministic
+shift fits the initial term structure while correlated Ornstein--Uhlenbeck
+factors drive future rates. Its standard construction and bond-pricing
+identities are described in \citet{brigo2006}. Gaussian structure makes bond
+prices exponentially affine in the factors and permits accurate low-dimensional
+quadrature for European claims. American and Bermudan claims do not generally
+retain the same simple integration structure. The least-squares Monte Carlo
+method of \citet{longstaff2001} instead estimates continuation values by
+regression on simulated state variables.
+
+Monte Carlo error estimation, antithetic variables, control variates, and
+discretization analysis are treated comprehensively by \citet{glasserman2003}.
+The present implementation uses online moments based on Welford's recurrence
+\citep{welford1962}, reporting the sample standard error with each stochastic
+price. Numerical stability matters beyond variance estimation: linear systems,
+optimization, interpolation, and finite differences can all create apparently
+plausible prices while losing meaningful digits \citep{higham2002}. This
+motivates the combination of exact identities, independent implementations,
+convergence experiments, and external cross-checks used below.
+
+Calibration introduces a distinct inverse problem. Even when every forward
+price is evaluated accurately, short-rate parameters may be weakly identified:
+different combinations of mean reversion, factor volatility, and correlation
+can generate similar swaption prices. A small residual therefore does not by
+itself imply a unique or economically stable parameter vector. The present
+paper makes this distinction operational by retaining all seeded starts and
+their terminal solutions. The diagnostic is intentionally more modest than a
+global-optimality claim.
+
+For early-exercise claims, regression creates another separation between a
+pricing algorithm and its statistical assessment. The backward LSM recursion
+constructs an exercise policy from simulated observations. Reusing those same
+observations for valuation entangles policy selection and performance
+measurement. Independent-path evaluation instead estimates the value of a
+frozen policy conditional on the training sample. It does not remove
+approximation error or guarantee an optimal stopping rule, but it makes one
+source of finite-sample uncertainty visible.
+
+The study also follows a software-artifact perspective. Rather than treating
+source code as supplementary prose, each numerical claim is connected to a CSV
+row emitted by the validation executable, a plotting function, and an
+acceptance criterion. This design permits reviewers to inspect the mapping from
+model assumptions to code and from code to manuscript values.
+
+\section{Conventions and deterministic instruments}
+\label{sec:conventions}
+
+\subsection{Notation, units, and claim boundary}
+
+All random variables are defined on a filtered probability space under the
+risk-neutral measure $\mathbb{Q}$. Time $t$ is a non-negative year fraction
+measured from valuation. $P(t,T)$ denotes the time-$t$ value of a zero-coupon
+bond paying one unit at $T\geq t$. Rates and volatilities are stored as decimal
+annualized quantities; one basis point is $10^{-4}$. Prices in the paper use
+unit notional unless a currency notional is stated explicitly.
+
+The symbols $a$ and $b$ denote positive mean-reversion speeds, while $\sigma$
+and $\eta$ denote factor volatilities. The instantaneous Brownian correlation
+is $\rho$. A factor state is written $X_t=(x_t,y_t)^\top$. $\Phi$ and $\phi$
+denote the standard normal distribution and density. For a finite sample,
+$\widehat{\operatorname{Var}}$ is the unbiased sample variance and $SE$ is the
+standard error of the reported estimator, not the standard deviation of a
+single path payoff.
+
+This notation deliberately excludes calendar objects. A time such as $2.0$
+means exactly two model years, not a date obtained after a holiday adjustment.
+The boundary matters: the paper validates numerical finance logic under explicit
+year-fraction conventions, not production lifecycle behavior.
+
+\subsection{Curves}
+
+Time is measured in year fractions from valuation. A continuously compounded
+zero rate $z(T)$ defines
+\begin{equation}
+  P(0,T)=\exp[-z(T)T].
+\end{equation}
+The library supports a flat analytic curve and an interpolated discount curve.
+Supplied maturities must be strictly increasing and discount factors strictly
+positive. Linear discount interpolation and log-linear discount interpolation
+are available; the latter produces piecewise-constant continuously compounded
+forward rates. Beyond the final node, the terminal zero rate is held flat.
+
+The curve interface is deliberately narrow: discount factors, zero rates, and
+forwards. This permits a discount curve and a forward curve to be supplied
+separately at the swap boundary even though the paper experiments use a single
+curve. For coupon period $[T_i,T_{i+1}]$ with accrual $\alpha_i$, the simple
+forward is
+\begin{equation}
+  L_i = \frac{P_f(0,T_i)/P_f(0,T_{i+1})-1}{\alpha_i}.
+\end{equation}
+All paper schedules are exact year-fraction schedules. There are no calendar
+dates, holiday rules, stubs, day-count bases, or business-day adjustments.
+This restriction is central to interpreting the QuantLib comparison.
+
+\subsection{Swaps and analytic options}
+
+For notional $N$, fixed coupon $K$, discount curve $P_d$, and payment dates
+$T_i$, the unsigned fixed-leg present value is
+\begin{equation}
+  PV_{\mathrm{fixed}}=N K \sum_i \alpha_i P_d(0,T_i)=NKA.
+\end{equation}
+The floating leg discounts the forward-curve-implied coupons. Under a single
+curve and zero spread, it telescopes to
+$N[P(0,T_0)-P(0,T_n)]$. Tests verify both this identity and that a swap struck
+at par has zero NPV. A payer swap pays fixed and receives floating; NPV signs
+are from the holder's perspective.
+
+\begin{proposition}[Single-curve floating-leg telescoping]
+\label{prop:telescoping}
+For a zero-spread floating leg with simple forwards extracted from the same
+curve used for discounting,
+\[
+  PV_{\mathrm{float}}
+  =N\sum_{i=0}^{n-1}\alpha_i L_iP(0,T_{i+1})
+  =N\{P(0,T_0)-P(0,T_n)\}.
+\]
+\end{proposition}
+\begin{proof}
+Substitution of
+$\alpha_iL_i=P(0,T_i)/P(0,T_{i+1})-1$ turns each discounted coupon into
+$P(0,T_i)-P(0,T_{i+1})$. Summation cancels every interior discount factor.
+\end{proof}
+
+The proposition is both a financial identity and an implementation diagnostic.
+A failure can reveal an accrual mismatch, an incorrect payment discount,
+inconsistent forward and discount curves, or an off-by-one schedule error. The
+test is therefore more informative than comparing a single swap NPV with a
+stored number.
+
+The Black--76 payer-call value is
+\begin{equation}
+  DF\,N\left[F\Phi(d_1)-K\Phi(d_2)\right],\qquad
+  d_{1,2}=\frac{\log(F/K)\pm\frac12\sigma^2T}{\sigma\sqrt T}.
+\end{equation}
+The Bachelier call value is
+\begin{equation}
+  DF\,N\left[(F-K)\Phi(d)+\sigma_N\sqrt T\,\phi(d)\right],\qquad
+  d=\frac{F-K}{\sigma_N\sqrt T}.
+\end{equation}
+Puts use a sign transformation; price, delta, gamma, and vega are returned
+together. Tests cover known values, put--call parity, monotonicity,
+non-negativity, negative forwards under Bachelier, and degenerate expiry or
+volatility.
+
+\section{G2++ model and European pricing}
+\label{sec:g2}
+
+\subsection{Dynamics and bond prices}
+
+Under the risk-neutral measure, the short rate is
+\begin{align}
+  r_t &= \varphi(t)+x_t+y_t,\\
+  dx_t &= -a x_t\,dt+\sigma\,dW_t^x,\\
+  dy_t &= -b y_t\,dt+\eta\,dW_t^y,\qquad
+  dW_t^x dW_t^y=\rho\,dt,
+\end{align}
+with $a,b>0$, $\sigma,\eta\geq0$, and $-1<\rho<1$. Define
+\begin{equation}
+  B(k,\tau)=\frac{1-e^{-k\tau}}{k}.
+\end{equation}
+The time-$t$ zero-coupon bond is
+\begin{equation}
+  P(t,T)=A(t,T)
+  \exp[-B(a,T-t)x_t-B(b,T-t)y_t],
+\end{equation}
+where
+\begin{equation}
+  A(t,T)=\frac{P(0,T)}{P(0,t)}
+  \exp\left[\frac12\{V(T-t)-V(T)+V(t)\}\right].
+\end{equation}
+\subsubsection{Integrated variance and deterministic shift}
+
+Let
+\[
+  I_t=\int_0^t(x_s+y_s)\,ds,\qquad V(t)=\operatorname{Var}(I_t).
+\]
+The implementation evaluates the following closed-form expression:
+\begin{align}
+V(t)={}&\frac{\sigma^2}{a^2}
+\left[t-\frac{2(1-e^{-at})}{a}+\frac{1-e^{-2at}}{2a}\right]\notag\\
+&+\frac{\eta^2}{b^2}
+\left[t-\frac{2(1-e^{-bt})}{b}+\frac{1-e^{-2bt}}{2b}\right]\notag\\
+&+\frac{2\rho\sigma\eta}{ab}
+\left[t-\frac{1-e^{-at}}{a}-\frac{1-e^{-bt}}{b}
++\frac{1-e^{-(a+b)t}}{a+b}\right].
+\label{eq:integrated-variance}
+\end{align}
+The line breaks separate the $x$, $y$, and cross-factor contributions. The
+deterministic shift is equivalently
+\begin{equation}
+  \varphi(t)=f^{M}(0,t)+\frac12 V'(t),\qquad
+  f^{M}(0,t)=-\partial_t\log P^{M}(0,t),
+\end{equation}
+where the superscript $M$ denotes the supplied market curve. In code, the curve
+derivative is evaluated through a short finite difference because the public
+curve interface exposes discount factors rather than an analytic forward
+derivative.
+
+\begin{proposition}[Exact initial term-structure fit]
+\label{prop:initial-fit}
+If $x_0=y_0=0$ and $A(t,T)$ is defined above, then the model bond at valuation
+satisfies $P(0,T)=P^{M}(0,T)$ for every admissible maturity $T$.
+\end{proposition}
+\begin{proof}
+Set $t=0$ in the affine bond formula. Since $V(0)=0$ and
+$V(T-0)-V(T)=0$, the exponential adjustment in $A(0,T)$ equals one.
+The factor exponential also equals one because $x_0=y_0=0$. Thus
+$P(0,T)=P^{M}(0,T)/P^{M}(0,0)=P^{M}(0,T)$, using $P^{M}(0,0)=1$.
+\end{proof}
+
+This is an exact construction property rather than a calibration result. The
+corresponding unit test evaluates several maturities and requires agreement near
+machine precision. It detects errors in the variance adjustment or affine
+loading that a swaption-only comparison could conceal.
+
+\subsubsection{Exact factor transition}
+
+For a step $\Delta>0$, conditional means are
+\[
+  \mathbb{E}_t[x_{t+\Delta}]=e^{-a\Delta}x_t,\qquad
+  \mathbb{E}_t[y_{t+\Delta}]=e^{-b\Delta}y_t,
+\]
+and the innovation covariance matrix has entries
+\begin{align}
+  q_x(\Delta)&=\frac{\sigma^2}{2a}(1-e^{-2a\Delta}),\\
+  q_y(\Delta)&=\frac{\eta^2}{2b}(1-e^{-2b\Delta}),\\
+  q_{xy}(\Delta)&=\frac{\rho\sigma\eta}{a+b}
+     (1-e^{-(a+b)\Delta}).
+\end{align}
+Hence the finite-step innovation correlation is
+\begin{equation}
+  \rho_\Delta=\frac{q_{xy}(\Delta)}
+  {\sqrt{q_x(\Delta)q_y(\Delta)}}.
+\end{equation}
+Except when $a=b$ or in the infinitesimal-step limit,
+$\rho_\Delta$ need not equal $\rho$. The simulator draws independent standard
+normals $Z_1,Z_2$ and uses
+\[
+  \varepsilon_x=\sqrt{q_x}Z_1,\qquad
+  \varepsilon_y=\sqrt{q_y}
+  \{\rho_\Delta Z_1+\sqrt{1-\rho_\Delta^2}Z_2\}.
+\]
+No Euler approximation is used for factor endpoints. Time discretization enters
+only through the accumulated short-rate integral.
+
+\begin{proposition}[Admissibility of the transition covariance]
+For $a,b>0$, $\sigma,\eta\geq0$, and $|\rho|<1$, the finite-step innovation
+covariance is positive semidefinite for every $\Delta\geq0$.
+\end{proposition}
+\begin{proof}
+The innovation vector is an It\^o integral of deterministic kernels against a
+two-dimensional Brownian motion with positive-semidefinite instantaneous
+correlation matrix. Its covariance is therefore an integral of
+positive-semidefinite matrices. Equivalently, Cauchy--Schwarz gives
+$q_{xy}^2\le q_xq_y$.
+\end{proof}
+
+\subsection{Joint-Gaussian quadrature}
+
+For expiry $T_e$ and final swap payment $T_n$, the payer swap value per unit
+notional at expiry is
+\begin{equation}
+  S(T_e)=1-P(T_e,T_n)
+  -K\sum_i \alpha_i P(T_e,T_i).
+\end{equation}
+Pricing requires both the terminal factors and the discount accumulated to
+expiry. Under G2++, the vector
+\begin{equation}
+  Z=
+  \left(
+    \int_0^{T_e}(x_s+y_s)\,ds,\,
+    x_{T_e},\,
+    y_{T_e}
+  \right)
+\end{equation}
+is jointly Gaussian with zero mean and covariance
+\begin{equation}
+  \Sigma(T_e)=
+  \begin{pmatrix}
+    V(T_e) & c_x(T_e) & c_y(T_e)\\
+    c_x(T_e) & v_x(T_e) & v_{xy}(T_e)\\
+    c_y(T_e) & v_{xy}(T_e) & v_y(T_e)
+  \end{pmatrix},
+  \label{eq:joint-covariance}
+\end{equation}
+where
+\begin{align}
+v_x(t)&=\frac{\sigma^2}{2a}(1-e^{-2at}),&
+v_y(t)&=\frac{\eta^2}{2b}(1-e^{-2bt}),\\
+v_{xy}(t)&=\frac{\rho\sigma\eta}{a+b}(1-e^{-(a+b)t}),\\
+c_x(t)&=\int_0^t\operatorname{Cov}(x_s+y_s,x_t)\,ds,&
+c_y(t)&=\int_0^t\operatorname{Cov}(x_s+y_s,y_t)\,ds.
+\end{align}
+The factor entries are closed form. The two one-dimensional cross-covariance
+integrals are evaluated independently with adaptive Simpson integration at
+tolerance $10^{-11}$. Appendix~\ref{app:moments} gives their closed forms, which
+provide an analytical audit of the numerical integrands.
+
+Let $L$ be the lower Cholesky factor of $\Sigma$, let
+$u_i,w_i$, $i=1,\ldots,8$, be the physicists' Gauss--Hermite nodes and weights,
+and let $z_{ijk}=\sqrt{2}(u_i,u_j,u_k)^\top$. If
+$Lz_{ijk}=(I_{ijk},x_{ijk},y_{ijk})^\top$, the implemented price is
+\begin{equation}
+\widehat{V}_{GH}
+=NP^{M}(0,T_e)e^{-V(T_e)/2}\pi^{-3/2}
+\sum_{i,j,k=1}^{8}w_iw_jw_k e^{-I_{ijk}}
+\left[S(T_e;x_{ijk},y_{ijk})\right]^+ .
+\label{eq:gh-price}
+\end{equation}
+The factor $e^{-V(T_e)/2}$ belongs to the deterministic shift, while
+$e^{-I_{ijk}}$ discounts the stochastic factor integral. Omitting either term
+changes the measure-weighted payoff.
+
+\begin{proposition}[Gaussian state reduction]
+For a European swaption with deterministic payment schedule under G2++, the
+time-zero price depends on the path before expiry only through the
+three-dimensional Gaussian vector in~\eqref{eq:joint-covariance}.
+\end{proposition}
+\begin{proof}
+The accumulated discount factor is
+$\exp[-\int_0^{T_e}\varphi(s)\,ds-I_{T_e}]$. Every expiry bond entering the
+swap value is exponentially affine in $(x_{T_e},y_{T_e})$. The discounted
+payoff is therefore a measurable function of
+$(I_{T_e},x_{T_e},y_{T_e})$ alone. Joint Gaussianity follows because each
+component is a linear functional of the Brownian drivers.
+\end{proof}
+
+The resulting deterministic algorithm has five steps:
+\begin{enumerate}
+  \item validate the schedule, expiry, notional, and quadrature order;
+  \item assemble $\Sigma(T_e)$ and compute its Cholesky factor;
+  \item map each of the 512 tensor nodes into $(I,x,y)$;
+  \item build every expiry bond and positive swap payoff;
+  \item multiply by stochastic and deterministic discount factors and sum the
+  weighted nodes.
+\end{enumerate}
+This construction avoids an inner time discretization in the production
+European price. The current API accepts order eight only; unsupported orders
+are rejected rather than silently mapped to a different computation. Fixing the
+order narrows the validation claim but also prevents an untested configuration
+from appearing equivalent to the published experiment.
+
+\subsection{Independent Monte Carlo route}
+
+The validation engine evolves the two OU factors with exact finite-step
+marginals, integrates the short rate by the trapezoid rule, and values the
+terminal swap from model bonds. Thus the factor endpoint simulation is exact,
+while the path discount integral has time-discretization error. Antithetic
+innovations are enabled in the convergence experiment. For discounted payoffs
+$X_1,\ldots,X_n$, the program reports
+\begin{equation}
+  \widehat{P}_n=\frac1n\sum_{j=1}^n X_j,\qquad
+  SE(\widehat{P}_n)=\sqrt{\frac{\widehat{\mathrm{Var}}(X)}{n}},
+\end{equation}
+with a nominal 95\% interval $\widehat{P}_n\pm1.96SE$. Moments are updated
+online, avoiding a cancellation-prone difference of large sums.
+
+Figure~\ref{fig:mc} reports two independent fixed seeds. At 30,000 paths, the
+seed-42 estimate is \LargestMCPrice{} with standard error \LargestMCSE{},
+compared with deterministic price \DeterministicPrice{}. The result is
+consistent with convergence to the deterministic engine, while the seed-7
+estimate illustrates that a single simulation run should not be treated as a
+pointwise proof.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{g2pp_mc_convergence.pdf}
+  \caption{G2++ European swaption Monte Carlo convergence. Error bars are
+  nominal 95\% intervals; the dashed line is the order-8 deterministic
+  quadrature result.}
+  \label{fig:mc}
+\end{figure}
+
+\subsubsection{Standardized-error diagnostic}
+
+Visual overlap of confidence intervals is useful but incomplete. For each run
+$r$, define
+\begin{equation}
+  Z_r=\frac{\widehat{P}_r-P_{GH}}{SE_r},
+\end{equation}
+where $P_{GH}$ is the deterministic quadrature price. Under an idealized
+unbiased normal approximation, values between $-1.96$ and $1.96$ are individually
+compatible with a two-sided 95\% interval. These eight observations are
+dependent across path counts because the same seed restarts each sequence; they
+must not be interpreted as eight independent coverage trials.
+
+Figure~\ref{fig:mc-z} shows that \MCCoveredRuns{} of \MCTotalRuns{} reported
+values lie inside the nominal band and the maximum absolute standardized error
+is \MCMaxAbsZ. The diagnostic separates price scale from sampling scale and
+makes the mild negative tendency for seed 7 visible. It does not establish
+normality of the estimator or rule out deterministic bias shared across all
+runs.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.88\linewidth]{g2pp_mc_standardized_error.pdf}
+  \caption{European swaption Monte Carlo error standardized by the reported
+  standard error. Dashed lines mark $\pm1.96$; labels give path count and seed.}
+  \label{fig:mc-z}
+\end{figure}
+
+With antithetic sampling, one statistical observation is the average of a path
+and its sign-reversed counterpart. Thus a nominal configuration with $n$ paths
+contains $n/2$ pair averages when $n$ is even. The standard error is computed
+from those pair averages, preserving their within-pair dependence. Treating the
+two legs as independent observations would understate uncertainty.
+
+\subsection{Coupled time-discretization convergence}
+
+A naive time-step comparison changes both the discretization and the random
+sample, so ordinary Monte Carlo noise can dominate the difference between
+grids. The coupled experiment instead simulates each factor path once on a
+384-step grid and reuses the same factor states and terminal payoff at
+12, 24, 48, 96, 192, and 384 integration steps. Only the trapezoidal
+short-rate integral changes. For level $h$ and finest level $f$, the program
+reports the paired estimator
+\begin{equation}
+  \widehat{B}_{h,f}=\frac{1}{n}\sum_{j=1}^{n}
+  \left(X_j^{(h)}-X_j^{(f)}\right),
+\end{equation}
+and its standard error from the pathwise differences. Common random numbers
+therefore remove most payoff sampling variation from the discretization
+comparison.
+
+\begin{proposition}[Variance of the coupled difference]
+For square-integrable coarse and fine estimators evaluated on common paths,
+\[
+  \operatorname{Var}(X^{(h)}-X^{(f)})
+  =\operatorname{Var}(X^{(h)})+\operatorname{Var}(X^{(f)})
+   -2\operatorname{Cov}(X^{(h)},X^{(f)}).
+\]
+When the two discretizations are strongly positively correlated, the paired
+standard error can be much smaller than the standard error of either price.
+\end{proposition}
+\begin{proof}
+The identity follows by expanding the centered square. Positive covariance
+subtracts directly from the variance of the difference.
+\end{proof}
+
+The finest path supplies the terminal factor state and payoff used at every
+level. Coarser grids retain only fine-grid endpoints whose indices are multiples
+of the required stride. Consequently, the paired difference isolates the
+trapezoidal integral and does not mix it with a different payoff state.
+
+Figure~\ref{fig:time-convergence} shows both fixed seeds. Across every coarser
+grid, the largest absolute paired bias is \TimeMaxPairedBias{} price units,
+equivalent to \TimeMaxPairedBiasBp{} basis points of notional. The sampling
+difference from deterministic quadrature remains larger, confirming why an
+uncoupled comparison would not resolve the integration bias reliably. This
+result applies to the declared instrument and parameter set, not to all G2++
+workloads.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{g2pp_time_step_convergence.pdf}
+  \caption{Coupled convergence of the trapezoidal discount integral relative
+  to the 384-step pathwise reference. Error bars are paired 95\% intervals.}
+  \label{fig:time-convergence}
+\end{figure}
+
+\section{Calibration and Bermudan exercise}
+\label{sec:calibration}
+
+\subsection{Normal-volatility calibration}
+
+A market quote contains expiry, underlying tenor, strike, absolute normal
+volatility, and weight. For each parameter candidate, the calibration procedure
+builds an annual schedule, computes the G2++ quadrature price, inverts the
+Bachelier formula by bracketed bisection, and minimizes weighted normal-volatility
+RMSE. Parameter bounds are
+\begin{equation}
+\begin{split}
+  a&\in[0.005,1],\qquad b\in[0.01,1.5],\\
+  \sigma,\eta&\in[10^{-4},0.1],\qquad
+  \rho\in[-0.95,0.95].
+\end{split}
+\end{equation}
+
+For quote $q$, let $C_q^{G2}(\theta)$ be the quadrature price at parameter
+vector $\theta=(a,b,\sigma,\eta,\rho)$, and let
+$C_q^{N}(\nu)$ be the corresponding Bachelier price as a function of absolute
+normal volatility. The model-implied volatility is the root
+\begin{equation}
+  \nu_q(\theta)=\{\nu\geq0:
+  C_q^{N}(\nu)=C_q^{G2}(\theta)\}.
+\end{equation}
+The Bachelier price is monotone in $\nu$ for non-degenerate claims, so a
+bracketed bisection gives a transparent inversion. Starting from an upper
+volatility of 1\%, the code doubles the bracket until the model price is
+enclosed, then solves to tolerance $10^{-9}$.
+
+The reported objective is
+\begin{equation}
+  \operatorname{RMSE}(\theta)=
+  \left\{\frac{\sum_{q=1}^{Q}w_q
+  [\nu_q(\theta)-\nu_q^{M}]^2}{\sum_{q=1}^{Q}w_q}\right\}^{1/2}.
+  \label{eq:calibration-objective}
+\end{equation}
+All six synthetic quotes use unit weight. Consequently, the objective has the
+same absolute units as normal volatility; multiplication by $10^4$ converts it
+to normal-volatility basis points.
+
+A deterministic bounded coordinate search is used. It is slower and less
+sophisticated than gradient-based least squares, but its steps and constraints
+are easy to audit.
+
+At each iteration, the solver evaluates positive and negative moves along each
+coordinate, projects trial values to their bounds, accepts the best improving
+candidate, and halves step lengths when no coordinate improves the objective.
+It stops after 120 iterations or once the maximum step is below
+$2\times10^{-5}$. The boolean convergence flag therefore records the numerical
+stopping rule; it is not a statement about global optimality.
+
+The paper calibration uses six quotes: expiries 1Y, 2Y, and 3Y crossed with 5Y
+and 10Y tenors. \texttt{qf-rates} attains an absolute normal-volatility RMSE of
+$1.8688\times10^{-4}$; the aligned QuantLib exercise attains
+$3.8671\times10^{-4}$. These values should not be interpreted as an optimizer
+ranking. The parameter vectors differ materially, indicating weak identification
+on the sparse grid and sensitivity to parameterization, bounds, and solver. The
+validation claim is limited to constrained finite parameters and acceptable
+reproduction of the input volatility surface.
+
+\subsection{Deterministic multi-start calibration}
+
+To expose optimizer dependence directly, the calibration API now runs the
+default parameter vector plus seven seeded, log-uniform starts within the
+declared parameter bounds. Each run retains its initial point, final parameters,
+RMSE, iterations, and convergence flag; the minimum-RMSE run is selected without
+discarding the alternatives.
+
+For the four positive parameters, a seeded uniform draw $U\sim U(0,1)$ is
+mapped to
+\begin{equation}
+  \theta_0=\exp\{\log \ell+U(\log u-\log \ell)\},
+\end{equation}
+where $\ell,u$ are the declared lower and upper bounds. Correlation is sampled
+uniformly in level between $-0.95$ and $0.95$. Log-uniform starts allocate
+comparable probability mass across orders of magnitude and are more revealing
+for volatility parameters than level-uniform draws.
+
+Figure~\ref{fig:multistart} shows substantial dependence on the initial point.
+The default start produces RMSE \MultiStartDefaultRMSE{}, while run
+\MultiStartBestRun{} produces \MultiStartBestRMSE{}, an improvement of
+\MultiStartImprovement{}. This is evidence that a single local coordinate
+search understates optimization uncertainty. It does not resolve structural
+parameter identification: multiple parameter vectors can still generate similar
+prices on six quotes.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.80\linewidth]{g2pp_multistart_calibration.pdf}
+  \caption{Normal-volatility RMSE for eight deterministic calibration starts.
+  Green identifies the selected run; the dashed line is the default-start RMSE.}
+  \label{fig:multistart}
+\end{figure}
+
+\subsection{Residual geometry and parameter identification}
+
+The best objective value occurs at run 4 with terminal parameters
+$a=0.8655$, $b=0.0251$, $\sigma=0.0159$, $\eta=0.0087$, and
+$\rho=-0.9381$. The correlation lies close to its lower bound and the run
+reaches the 120-iteration cap rather than satisfying the step-size convergence
+criterion. It is selected because its observed RMSE is lowest, not because the
+solver certifies a stationary or global solution.
+
+Figure~\ref{fig:calibration-residuals} decomposes the RMSE. The maximum absolute
+quote error is \CalibrationMaxResidualBp{} normal-volatility basis points. The
+sign changes across the grid: short 5Y-tenor quotes are slightly overfit,
+the 3Y-by-10Y quote is underfit, and the 1Y-by-10Y quote is overfit. A scalar
+RMSE alone would hide this structure.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.90\linewidth]{g2pp_calibration_residuals.pdf}
+  \caption{Best-run calibration by quote. Top: market and model absolute
+  normal volatilities. Bottom: model-minus-market residual in basis points.}
+  \label{fig:calibration-residuals}
+\end{figure}
+
+Figure~\ref{fig:calibration-parameters} normalizes every terminal parameter to
+its declared interval. Final solutions remain widely dispersed even though
+several RMSE values are close. The selected run combines fast first-factor mean
+reversion with a correlation near the lower boundary. This is direct evidence
+of weak identification on the six-quote surface. It also explains why the paper
+reports the full run table in Appendix~\ref{app:calibration-tables}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.88\linewidth]{g2pp_multistart_parameters.pdf}
+  \caption{Terminal parameter vectors for all eight starts, normalized to the
+  calibration bounds. The selected objective value does not imply parameter
+  concentration.}
+  \label{fig:calibration-parameters}
+\end{figure}
+
+\subsection{Longstaff--Schwartz}
+
+For multiple exercise dates, simulated factor states and cumulative discount
+factors are stored at the exercise grid. Backward induction regresses discounted
+realized continuation on either a linear basis or the quadratic state basis
+\begin{equation}
+  (1,x,y,x^2,xy,y^2).
+\end{equation}
+
+Let exercise dates be $t_1<\cdots<t_M$, $H_m^{(j)}$ the intrinsic value on
+path $j$, and $D_m^{(j)}$ the time-zero discount factor. If a later path value
+$V_{m+1}^{(j)}$ is stored at $t_{m+1}$, its continuation target at $t_m$ is
+\begin{equation}
+  Y_m^{(j)}
+  =V_{m+1}^{(j)}\frac{D_{m+1}^{(j)}}{D_m^{(j)}}.
+\end{equation}
+On in-the-money paths $\mathcal I_m=\{j:H_m^{(j)}>0\}$, coefficients solve the
+ridge-stabilized normal equations
+\begin{equation}
+  (\Psi_m^\top\Psi_m+10^{-12}I)\widehat{\beta}_m
+  =\Psi_m^\top Y_m.
+  \label{eq:lsm-normal}
+\end{equation}
+Here the rows of $\Psi_m$ are the selected basis functions evaluated at
+$(x_{t_m}^{(j)},y_{t_m}^{(j)})$. At least twice as many in-the-money paths as
+basis functions are required before a regression is accepted.
+
+Only in-the-money paths enter the regression. Exercise occurs when intrinsic
+value exceeds estimated continuation; values are rolled backward using
+path-specific discount ratios.
+
+The backward recursion is therefore:
+\begin{enumerate}
+  \item initialize each path with intrinsic value at $t_M$;
+  \item for $m=M-1,\ldots,1$, discount the stored later value to $t_m$;
+  \item fit~\eqref{eq:lsm-normal} on in-the-money paths;
+  \item replace continuation by $H_m$ when
+    $H_m>\psi(X_{t_m})^\top\widehat{\beta}_m$;
+  \item discount the resulting path values to time zero and average.
+\end{enumerate}
+The reported standard error is the sample standard error of discounted realized
+path values after applying the learned stopping decisions.
+
+With a single exercise date, the implementation delegates to the validated
+European quadrature engine. For multiple dates, a comparable first-date European
+value is used as a lower-bound safeguard against finite-sample regression bias.
+This preserves an important no-arbitrage ordering, but the safeguard can mask an
+unstable continuation regression if considered in isolation. The study therefore
+reports path count, seed, basis, price, and standard error in full.
+
+Figure~\ref{fig:lsm} shows results at 2,000, 5,000, and 10,000 paths for seeds
+7 and 42. Standard errors decrease from approximately $3.6\times10^{-4}$ at
+2,000 paths to $1.6\times10^{-4}$ at 10,000 paths. At 10,000 paths, the four
+estimates span 0.01366320 to 0.01384655. The gap between seeds is comparable to
+the reported sampling uncertainty, whereas the difference between linear and
+quadratic bases within each seed is smaller. The table in
+Appendix~\ref{app:lsm} preserves all twelve observations.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{lsm_convergence.pdf}
+  \caption{Bermudan Longstaff--Schwartz convergence across two seeds and two
+  polynomial bases. Error bars are nominal 95\% intervals.}
+  \label{fig:lsm}
+\end{figure}
+
+\subsection{Out-of-sample exercise-policy evaluation}
+
+In-sample LSM uses the same paths to fit continuation regressions and to value
+the resulting exercise rule. To measure this reuse explicitly, the new engine
+fits all backward-regression coefficients on a training simulation, freezes the
+policy, and then applies it forward to a second simulation with a distinct
+seed. No coefficients are re-estimated on valuation paths. Paths that never
+exercise are reported separately instead of being assigned automatically to
+the final date.
+
+\begin{proposition}[Conditional validity of the policy estimator]
+\label{prop:oos}
+Condition on a fitted exercise policy $\widehat{\pi}$ obtained from the training
+sample. If the valuation paths are independent and identically distributed
+under the pricing measure, their discounted payoff average is an unbiased
+estimator of the value $V(\widehat{\pi})$ of that fixed policy, with the usual
+sample standard error.
+\end{proposition}
+\begin{proof}
+Conditional on the training sample, $\widehat{\pi}$ is deterministic. Each
+valuation path produces an identically distributed discounted payoff obtained
+by applying that fixed stopping rule. Independence and linearity of expectation
+give unbiasedness of the sample mean for $V(\widehat{\pi})$.
+\end{proof}
+
+\begin{remark}
+The proposition does not state that $V(\widehat{\pi})$ equals the optimal
+Bermudan value. Approximation bias, basis misspecification, training-sample
+variation, and numerical discounting remain. Independent evaluation isolates
+performance measurement from policy fitting; it does not solve the optimal
+stopping problem exactly.
+\end{remark}
+
+The experiment crosses 2,000, 5,000, and 10,000 training paths with two training
+seeds and linear/quadratic bases, while using 10,000 independent valuation paths
+per configuration. Independent prices range from \OOSPriceMinimum{} to
+\OOSPriceMaximum{}. The largest absolute training-minus-valuation gap is
+\OOSMaxGap{}. Figure~\ref{fig:lsm-oos} shows that the sign of the gap changes
+with the training seed; therefore the finite-sample difference should not be
+described mechanically as a positive look-ahead bias. The relevant conclusion
+is that independent evaluation reveals policy uncertainty that an in-sample
+price alone does not show.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{lsm_out_of_sample.pdf}
+  \caption{Training price minus independent fixed-policy valuation. Error bars
+  are 95\% intervals based on valuation-path standard errors.}
+  \label{fig:lsm-oos}
+\end{figure}
+
+\subsubsection{Exercise-time distribution}
+
+A price difference can arise from both payoff magnitude and stopping behavior.
+The independent evaluator therefore records exercise frequencies at 1Y, 2Y,
+and 3Y, plus the probability that no exercise occurs. Figure~\ref{fig:lsm-ex}
+shows the four policies trained on 10,000 paths. Across all twelve configurations,
+1Y exercise lies between \OOSOneYearExerciseMinimum{} and
+\OOSOneYearExerciseMaximum{}, while non-exercise lies between
+\OOSNonExerciseMinimum{} and \OOSNonExerciseMaximum{}.
+
+The four 10,000-path distributions are visually stable across basis and seed:
+roughly one fifth of paths exercise at each date and more than two fifths never
+exercise. This stability should not be confused with price convergence. Small
+changes near the stopping boundary can alter value while leaving aggregate
+frequencies nearly unchanged.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.86\linewidth]{lsm_exercise_distribution.pdf}
+  \caption{Independent-path exercise distribution for policies trained on
+  10,000 paths. The stacked probabilities include explicit non-exercise.}
+  \label{fig:lsm-ex}
+\end{figure}
+
+\clearpage
+\section{Experimental design and validation}
+\label{sec:experiments}
+
+\subsection{Validation hierarchy}
+
+The test suite contains 34 unit, property, convergence, and regression tests.
+The hierarchy begins with exact identities: curve nodes, continuous discounting,
+swap par value, telescoping floating coupons, put--call parity, and G2++ initial
+curve fit. Numerical building blocks are checked against known roots,
+integrals, optimizer bounds, unbiased sample variance, and seeded antithetic
+draws. Model-level tests then compare deterministic and Monte Carlo European
+prices, verify calibration constraints, check one-date LSM reduction to the
+European engine, reconcile bucket and parallel risk, and assert directional
+exposure/XVA properties.
+
+This layered approach is preferable to a single end-to-end benchmark. Agreement
+with an external library can otherwise conceal offsetting convention errors,
+while an algebraic identity alone cannot establish that a full numerical engine
+is implemented correctly. The paper reports both.
+
+\subsection{QuantLib alignment}
+
+The cross-library comparison uses QuantLib 1.43 through Python. A
+\texttt{SimpleDayCounter}, null calendar, unadjusted schedules, and a flat
+continuously compounded 2.5\% curve align QuantLib's date-based interfaces with
+the year-fraction conventions in \texttt{qf-rates}. Fixed coupons are annual,
+floating coupons are semiannual, dates are unadjusted, and notionals are
+normalized to one for the swaption grid.
+
+Table~\ref{tab:quantlib} shows exact agreement to the displayed precision for
+Black--76, Bachelier, swap par rate, and swap NPV. For the ATM 2Y-by-5Y G2++
+payer swaption with $a=0.10$, $b=0.30$, $\sigma=0.01$,
+$\eta=0.015$, and $\rho=-0.70$, the order-8 quadrature differs from QuantLib's
+\texttt{G2SwaptionEngine} configuration by 0.7203\%. This anchor case is retained
+for continuity, but the research claim is based on the full grid below rather
+than a single tolerance-selected example. The two implementations do not share
+schedule or integration code; exact equality is neither expected nor imposed.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Cross-implementation validation against QuantLib 1.43.}
+  \label{tab:quantlib}
+  \resizebox{\linewidth}{!}{\input{generated/quantlib_table.tex}}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.76\linewidth]{quantlib_comparison.pdf}
+  \caption{Selected prices normalized by their QuantLib values. The analytic
+  case overlaps exactly at displayed precision; the G2++ bar exposes the
+  0.7203\% numerical difference.}
+  \label{fig:quantlib}
+\end{figure}
+
+\subsection{Cross-engine European swaption grid}
+\label{sec:quantlib-grid}
+
+The external grid crosses five parameter regimes with expiries 1Y/2Y/5Y,
+underlying tenors 2Y/5Y/10Y, and payer strikes at $-100$, 0, and $+100$ basis
+points relative to the aligned par rate. This produces
+\QuantLibGridCells{} comparisons. The \texttt{qf-rates} side uses order-8 tensor
+Gauss--Hermite quadrature; the reference side uses QuantLib's
+\texttt{G2SwaptionEngine} with range 7 and 64 intervals. Parameters,
+instruments, and both raw prices are frozen in
+\texttt{quantlib\_g2pp\_grid.csv}.
+
+Relative errors become unstable when the reference price is economically
+negligible. The summary therefore declares a material cell \emph{before
+aggregation} as one whose QuantLib price is at least $10^{-4}$, or one basis
+point of notional. There are \QuantLibGridMaterialCells{} such cells. Their
+absolute relative difference has median \QuantLibGridMedianRelativeError{},
+95th percentile \QuantLibGridNinetyFifthRelativeError{}, and maximum
+\QuantLibGridMaxRelativeError{}. Over all cells, including immaterial ones, the
+largest absolute difference is \QuantLibGridMaxDifferenceBp{} basis points of
+notional. Table~\ref{tab:quantlib-grid} reports the distribution by regime.
+
+\begin{table}[t]
+  \centering
+  \scriptsize
+  \caption{Systematic G2++ comparison with QuantLib 1.43. ``Material'' means a
+  QuantLib price of at least one basis point of notional. Relative summaries
+  use material cells; the final column uses every cell.}
+  \label{tab:quantlib-grid}
+  \resizebox{\linewidth}{!}{\input{generated/quantlib_grid_summary_table.tex}}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.98\linewidth]{quantlib_g2pp_grid.pdf}
+  \caption{Cross-engine G2++ European swaption validation. Left: material prices
+  against the identity line on logarithmic axes. Right: absolute relative
+  differences by parameter regime for the same material cells.}
+  \label{fig:quantlib-grid}
+\end{figure}
+
+The error is not uniform. In particular, the fast-mean-reversion regime has a
+larger upper tail even though its absolute gaps remain small. Reporting both
+relative and notional-normalized absolute errors prevents a tiny option value
+from dominating the interpretation. The grid is a numerical validation result
+under aligned synthetic conventions, not evidence that either engine is a
+market-standard calibration or that the models are empirically correct.
+
+\subsection{Propagation of price differences to finite-difference risk}
+\label{sec:risk-propagation}
+
+Price agreement alone does not establish risk agreement. Four cases are
+therefore revalued in both engines after two controlled perturbations. Curve
+DV01 is the fixed-strike price change after a parallel one-basis-point downward
+shift of the flat curve. The second diagnostic jointly increases $\sigma$ and
+$\eta$ by one basis point while leaving mean reversion and correlation fixed.
+It is deliberately called a \emph{model-volatility bump}: it is not market-quote
+vega and does not include recalibration.
+
+Table~\ref{tab:risk-validation} and Figure~\ref{fig:risk-validation} show that
+the maximum relative difference is \RiskMaxDVOneDifference{} for curve DV01 and
+\RiskMaxVolatilityDifference{} for the model-volatility bump. The longer,
+high-volatility and weak-correlation cases produce the largest DV01 differences,
+whereas the volatility response is closer across all four cases. Thus a modest
+price gap does not translate mechanically into the same percentage risk gap;
+risk must be validated as a separate numerical output.
+
+\begin{table}[t]
+  \centering
+  \scriptsize
+  \caption{Propagation to finite-difference risk. Values are price changes
+  multiplied by $10^4$; relative columns compare absolute engine differences
+  with the QuantLib sensitivity magnitude.}
+  \label{tab:risk-validation}
+  \resizebox{\linewidth}{!}{\input{generated/risk_validation_table.tex}}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.88\linewidth]{g2pp_risk_validation.pdf}
+  \caption{Independent-engine comparison of fixed-strike curve DV01 (top) and
+  the joint one-basis-point $\sigma$--$\eta$ bump (bottom).}
+  \label{fig:risk-validation}
+\end{figure}
+
+\subsection{G2++ stress grid}
+
+The deterministic stress grid contains \StressGridCells{} prices: five parameter
+regimes, expiries 1Y/2Y/5Y, tenors 2Y/5Y/10Y, and payer strikes at
+$-100$, 0, and $+100$ basis points relative to par. The regimes are low
+volatility, base, high volatility, fast mean reversion, and weak factor
+correlation. Every cell is committed as machine-readable CSV.
+
+Automated properties require finite non-negative values, decreasing payer prices
+as strike increases, and non-decreasing prices when both factor volatilities are
+raised with other parameters fixed. Figure~\ref{fig:stress} displays the ATM
+slice of all five regimes. The full moneyness dimension remains in the data
+artifact. As expected, the high-volatility regime produces the largest ATM
+values, while faster mean reversion suppresses long-horizon factor variance.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.98\linewidth]{g2pp_stress_grid.pdf}
+  \caption{ATM slice of the complete G2++ stress grid. Values are basis points
+  of notional; each panel crosses three expiries with three underlying tenors.}
+  \label{fig:stress}
+\end{figure}
+
+Across all 135 cells, prices range from \StressMinimumPriceBp{} to
+\StressMaximumPriceBp{} basis points of notional. The lower edge occurs for a
+deep out-of-the-money short claim under low volatility, while the upper edge
+comes from the longest high-volatility in-the-money configurations. These
+extremes are useful numerical tests because they span more than six orders of
+magnitude without producing a negative or non-finite value.
+
+Figure~\ref{fig:stress-moneyness} restores the moneyness dimension by averaging
+each regime over the nine expiry-tenor combinations. Payer prices decrease with
+strike in every regime. The high-volatility regime remains above the base case,
+while fast mean reversion substantially compresses the ATM and out-of-the-money
+values. Weakening the negative correlation increases total factor variance for
+the chosen positive factor volatilities, so its curve lies above the base case.
+Appendix~\ref{app:stress-table} reports minimum, median, and maximum values by
+regime.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.86\linewidth]{g2pp_stress_moneyness.pdf}
+  \caption{Mean G2++ payer-swaption price by strike across the nine
+  expiry-tenor cells in each parameter regime.}
+  \label{fig:stress-moneyness}
+\end{figure}
+
+\subsection{Variance reduction}
+
+To measure rather than assume estimator efficiency, a separate one-factor
+lognormal call workload uses 100,000 paths with common seed 17. Plain Monte
+Carlo, antithetic sampling, and a terminal-underlying control variate are run
+under identical economic inputs. For estimator $m$, the reported ratio is
+\begin{equation}
+  R_m=\left(\frac{SE_m}{SE_{\mathrm{plain}}}\right)^2.
+\end{equation}
+Antithetic sampling produces $R= \AntitheticVarianceRatio$, and the control
+variate produces $R=\ControlVarianceRatio$, a \ControlVarianceReduction{}
+reduction in measured variance. Figure~\ref{fig:variance} makes the comparison
+explicit. These values are workload-specific; they are not universal
+guarantees for non-linear rate products.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.72\linewidth]{variance_reduction.pdf}
+  \caption{Measured estimator variance relative to plain Monte Carlo for the
+  fixed 100,000-path validation workload.}
+  \label{fig:variance}
+\end{figure}
+
+\clearpage
+\section{Market risk, exposure, and wrong-way sensitivity}
+\label{sec:risk}
+
+\subsection{Bump-and-revalue market risk}
+
+DV01 is defined by a one-basis-point downward shift in continuously compounded
+zero rates:
+\begin{equation}
+  DV01 = PV(z-1\text{ bp})-PV(z).
+\end{equation}
+Both discount and forward curves are shifted in the single-curve helper.
+Bucketed DV01 is required to reconcile with the parallel bump within 2\%.
+Volatility scenarios separately require a payer swaption value to increase
+under an up shock and decrease under a down shock. Bucket vega is reconciled
+with the global bump to 0.1\%.
+
+For bucket $k$ and bump size $\delta$, the central sensitivity convention is
+\begin{equation}
+  \Delta_k^{(\delta)}
+  =\frac{PV(\theta+\delta e_k)-PV(\theta-\delta e_k)}{2\delta}.
+\end{equation}
+The public helpers return currency-valued bump effects rather than normalized
+derivatives where that convention is more familiar to risk users. The tests
+therefore compare like-for-like aggregation: the sum of local curve bump effects
+with a parallel curve effect, and weighted volatility buckets with a global
+volatility bump. Directional scenarios are tested separately from
+first-order reconciliation because a scenario contains finite convexity.
+
+\subsection{Exposure and XVA discretization}
+
+The exposure extension revalues swaps along G2++ paths. With netting enabled,
+positive and negative exposure are taken after portfolio aggregation. A
+transparent sensitivity proxy multiplies positive exposure by
+$\exp[\beta(x_t+y_t)]$.
+
+Let $V_j(t_i)$ be the netted portfolio value on path $j$ at exposure time
+$t_i$. The independent and proxy-weighted expected positive exposures are
+\begin{align}
+  EPE_0(t_i)&=\frac1n\sum_{j=1}^{n}[V_j(t_i)]^+,\\
+  EPE_\beta(t_i)&=\frac1n\sum_{j=1}^{n}[V_j(t_i)]^+
+  \exp\{\beta(x_j(t_i)+y_j(t_i))\}.
+  \label{eq:wwr-epe}
+\end{align}
+With deterministic counterparty survival $S_c(t)$ and recovery $R$, the
+discrete CVA is
+\begin{equation}
+  CVA_\beta=(1-R)\sum_i P(0,t_i)EPE_\beta(t_i)
+  \{S_c(t_{i-1})-S_c(t_i)\}.
+\end{equation}
+The experiment uses $R=40\%$, a 2\% counterparty hazard rate, and six exposure
+dates from 0.5Y to 5Y.
+
+Figure~\ref{fig:wwr-grid} reports the full sensitivity grid
+$\beta=0,5,\ldots,30$. CVA increases monotonically from
+\IndependentCVA{} at $\beta=0$ to \WrongWayThirtyCVA{} at $\beta=30$, a
+\WrongWayThirtyIncrease{} increase. At $\beta=20$, the value is
+\WrongWayCVA{}, or \WrongWayIncrease{} above the independent case. The exposure
+panels show that the multiplier changes the whole profile rather than a single
+summary statistic.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.98\linewidth]{wrong_way_risk_sensitivity.pdf}
+  \caption{Sensitivity of proxy-weighted CVA and expected positive exposure to
+  $\beta$. The grid is deterministic for the fixed seed and path count.}
+  \label{fig:wwr-grid}
+\end{figure}
+
+This is not a calibrated joint credit/rates model. The exponential multiplier
+does not define a counterparty intensity, is not normalized to preserve an
+unconditional hazard curve, and can become extreme outside the tested state
+range. The grid establishes implementation direction, smooth sensitivity, and
+reproducibility only. Appendix~\ref{app:wwr-table} contains every CVA value and
+peak exposure.
+
+\clearpage
+\section{Software artifact and reproducibility}
+\label{sec:artifact}
+
+\subsection{Artifact architecture}
+
+\texttt{qf-rates} separates public headers, implementation, tests, examples,
+benchmarks, Python bindings, documentation, and paper artifacts. Public targets
+require C++20. CMake discovers or fetches pinned Eigen 3.4.0 and Catch2 3.7.1,
+while the installed public interface remains dependency-light. Warning flags
+are enabled for all core targets, and CI promotes warnings to errors.
+
+\subsection{Continuous integration and deterministic controls}
+
+The continuous-integration workflow runs Release builds on Linux and macOS,
+all tests, installation, formatting, clang-tidy, Linux AddressSanitizer and
+UndefinedBehaviorSanitizer, Python binding smoke tests, and QuantLib
+cross-checks. A paper job regenerates numerical CSV files and figures before
+compiling the manuscript. Stochastic APIs use explicit seeds, and results
+include path counts and standard errors.
+
+\subsection{Evidence lineage}
+
+Table~\ref{tab:evidence-lineage} maps each principal empirical claim to its
+producer and frozen manuscript input. Figures are not digitized or copied from
+terminal output; the plotting script reads these CSV files directly.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Lineage from executable experiment to manuscript artifact.}
+  \label{tab:evidence-lineage}
+  \begin{tabular}{
+    >{\raggedright\arraybackslash}p{0.24\linewidth}
+    >{\raggedright\arraybackslash}p{0.25\linewidth}
+    >{\raggedright\arraybackslash}p{0.41\linewidth}}
+    \toprule
+    Claim & Producer & Frozen evidence\\
+    \midrule
+    European MC convergence & C++ validation executable &
+      \path{g2pp_monte_carlo_convergence.csv}\\
+    Coupled time-grid bias & C++ validation executable &
+      \path{g2pp_time_step_convergence.csv}\\
+    Stress and moneyness & C++ validation executable &
+      \path{g2pp_stress_grid.csv}\\
+    Multi-start and residuals & C++ validation executable &
+      \path{g2pp_multistart_calibration.csv},
+      \path{g2pp_calibration_residuals.csv}\\
+    LSM policy evaluation & C++ validation executable &
+      \path{lsm_out_of_sample.csv}\\
+    WWR sensitivity & C++ validation executable &
+      \path{wrong_way_risk_grid.csv}\\
+    QuantLib alignment & Python reference script &
+      \path{quantlib_validation.csv},
+      \path{calibration_validation.csv}\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The command
+\begin{quote}
+\small\ttfamily
+./scripts/reproduce\_paper.sh
+\end{quote}
+configures a Release build, compiles the validation executable, runs the tests,
+regenerates CSV evidence and figures, executes the Python reference checks, and
+compiles this paper. There is no downloaded market dataset or hidden notebook
+state. The source archive includes the generated figure PDFs and LaTeX tables,
+so arXiv compilation does not require CMake, Python, or QuantLib.
+
+Reproducibility does not imply bitwise identity on every platform. The C++
+standard does not require all standard-library implementations to map the same
+pseudo-random engine outputs to identical normal variates. Statistical tests
+therefore use uncertainty-aware tolerances. Deterministic algebraic and
+cross-library checks use tighter absolute or relative thresholds.
+
+The generated arXiv package contains only TeX, bibliography, pre-generated
+tables, and vector PDF figures. A reader can therefore compile the manuscript
+without a C++ toolchain, while an artifact reviewer can rebuild every frozen
+input through the longer pipeline. Before delivery, the archive is extracted
+and compiled in an empty temporary directory to detect missing files and
+accidental reliance on local paths.
+
+\section{Limitations and model risk}
+\label{sec:limitations}
+
+The following limitations define the boundary of the evidence:
+\begin{itemize}
+  \item \textbf{Market conventions.} Schedules are year fractions. Calendars,
+  stubs, day counts, fixing lags, settlement, collateral discounting, and
+  production multi-curve bootstrap are absent.
+  \item \textbf{Quadrature.} The European engine fixes tensor order eight.
+  It is checked by Monte Carlo and by a 135-cell external QuantLib surface, but
+  the study does not vary quadrature order or QuantLib engine settings
+  exhaustively. The observed differences therefore combine numerical-method and
+  residual convention effects rather than identifying one unique cause.
+  \item \textbf{Calibration.} Coordinate search is deterministic but can settle
+  at local minima. Six normal-volatility quotes do not identify five G2++
+  parameters robustly. Eight starts expose but do not eliminate local-minimum
+  and identification risk; regularization and denser market grids remain needed.
+  \item \textbf{LSM regression.} Normal equations with a small ridge are less
+  stable than QR or SVD. The European lower-bound safeguard can hide poor
+  continuation estimates in the legacy in-sample result. Independent policy
+  evaluation removes path reuse but not regression approximation error.
+  \item \textbf{Monte Carlo.} Confidence intervals quantify sampling error,
+  not model error. The coupled time-step study isolates discount-integration
+  error for one declared case; broader parameter and maturity coverage is needed.
+  \item \textbf{Risk and XVA.} The XVA module uses deterministic hazards, no
+  collateral agreement, a proxy WWR multiplier, illustrative SIMM weights, and
+  a simplified funding calculation. The cross-engine volatility diagnostic
+  bumps model parameters without recalibration and must not be interpreted as
+  market-quote vega. The module must not be treated as regulatory or
+  counterparty-risk infrastructure.
+  \item \textbf{Performance.} The implementation favors clarity. It does not
+  claim optimal vectorization, parallelism, cache layout, or accelerator use.
+\end{itemize}
+
+These constraints also indicate useful research extensions: arbitrary-order
+Hermite rules; a decomposition of the remaining cross-engine error by numerical
+setting; quote-recalibrated and adjoint Greeks; QR/SVD LSM with cross-fitting;
+regularized calibration; multi-curve calibration; and exposure simulation under
+a calibrated joint rates/credit model.
+
+\section{Conclusion}
+
+This paper presented a reproducible numerical-validation protocol for G2++
+swaption pricing. Its central result is a convention-aligned external comparison
+covering \QuantLibGridCells{} European swaptions rather than one favorable
+instrument. Across material cells, the median absolute relative difference is
+\QuantLibGridMedianRelativeError{} and the 95th percentile is
+\QuantLibGridNinetyFifthRelativeError. The largest full-grid absolute gap is
+\QuantLibGridMaxDifferenceBp{} basis points of notional. Direct validation of
+finite-difference outputs further shows maximum discrepancies of
+\RiskMaxDVOneDifference{} for fixed-strike curve DV01 and
+\RiskMaxVolatilityDifference{} for the controlled model-volatility bump.
+
+Independent Monte Carlo confidence intervals and coupled time grids distinguish
+sampling noise from discount-integration error. Multi-start calibration exposes
+local minima and weak parameter identification, while independent-path
+Longstaff--Schwartz valuation avoids reporting a training-sample policy value as
+an out-of-sample result. These experiments turn implementation choices into
+observable parts of an error budget.
+
+The central conclusion remains deliberately narrow: within the stated synthetic
+conventions and test domain, the quadrature engine, QuantLib reference, Monte
+Carlo implementation, calibration routine, and Bermudan exercise workflow form
+a coherent but not perfectly identical numerical system. The remaining
+differences are measured rather than hidden. The accompanying C++20 artifact
+makes every reported result reviewable and reproducible; it does not eliminate
+model risk, establish production readiness, or introduce new G2++ theory.
+
+\clearpage
+\appendix
+
+\section{Analytical Gaussian moments}
+\label{app:moments}
+
+This appendix derives the entries used in the joint state
+matrix~\eqref{eq:joint-covariance}. With zero initial state,
+\begin{align}
+  x_t&=\sigma\int_0^t e^{-a(t-u)}\,dW_u^x,\\
+  y_t&=\eta\int_0^t e^{-b(t-u)}\,dW_u^y.
+\end{align}
+Integration in time and stochastic Fubini give
+\begin{align}
+  \int_0^t x_s\,ds
+  &=\frac{\sigma}{a}\int_0^t
+    (1-e^{-a(t-u)})\,dW_u^x,\\
+  \int_0^t y_s\,ds
+  &=\frac{\eta}{b}\int_0^t
+    (1-e^{-b(t-u)})\,dW_u^y.
+\end{align}
+It\^o isometry immediately yields the two single-factor contributions and the
+cross term in~\eqref{eq:integrated-variance}.
+
+The covariance between the integrated factor sum and the terminal $x$ factor is
+\begin{align}
+c_x(t)={}&
+\frac{\sigma^2}{a}
+\left[\frac{1-e^{-at}}{a}-\frac{1-e^{-2at}}{2a}\right]\notag\\
+&+\frac{\rho\sigma\eta}{b}
+\left[\frac{1-e^{-at}}{a}
+-\frac{1-e^{-(a+b)t}}{a+b}\right],
+\label{eq:cx-closed}
+\end{align}
+and symmetrically
+\begin{align}
+c_y(t)={}&
+\frac{\eta^2}{b}
+\left[\frac{1-e^{-bt}}{b}-\frac{1-e^{-2bt}}{2b}\right]\notag\\
+&+\frac{\rho\sigma\eta}{a}
+\left[\frac{1-e^{-bt}}{b}
+-\frac{1-e^{-(a+b)t}}{a+b}\right].
+\label{eq:cy-closed}
+\end{align}
+Equations~\eqref{eq:cx-closed}--\eqref{eq:cy-closed} are not a second pricing
+implementation in the released code; the production quadrature integrates the
+corresponding covariance functions numerically. They provide a compact
+independent derivation against which that integration can be reviewed.
+
+The deterministic part of the discount factor follows from
+\[
+  \int_0^{T_e}\varphi(s)\,ds
+  =-\log P^M(0,T_e)+\frac12V(T_e),
+\]
+so
+\[
+  \exp\left[-\int_0^{T_e}\varphi(s)\,ds\right]
+  =P^M(0,T_e)e^{-V(T_e)/2}.
+\]
+This is the prefactor in~\eqref{eq:gh-price}.
+
+\begin{lemma}[Positive semidefiniteness of the joint state]
+The matrix $\Sigma(t)$ in~\eqref{eq:joint-covariance} is positive semidefinite.
+\end{lemma}
+\begin{proof}
+For any $u\in\mathbb{R}^3$,
+$u^\top\Sigma(t)u$ is the variance of the scalar linear combination
+$u_1I_t+u_2x_t+u_3y_t$, hence is non-negative.
+\end{proof}
+
+\section{Executable algorithms}
+\label{app:algorithms}
+
+\subsection{European quadrature}
+
+\noindent\textbf{Input:} curve, G2++ parameters, European swaption, order 8.
+\begin{enumerate}
+  \item Validate $T_e>0$, positive notional, and a schedule beginning no earlier
+  than expiry.
+  \item Compute $V(T_e)$, factor covariance, $c_x(T_e)$, and $c_y(T_e)$.
+  \item Form $\Sigma(T_e)$ and its lower Cholesky factor $L$.
+  \item For every $(i,j,k)\in\{1,\ldots,8\}^3$, set
+  $Z=L\sqrt2(u_i,u_j,u_k)^\top$.
+  \item Evaluate all model bonds at expiry, the signed underlying swap value,
+  the positive option payoff, and $e^{-Z_1}$.
+  \item Accumulate the tensor weights and apply the deterministic prefactor in
+  equation~\eqref{eq:gh-price}.
+\end{enumerate}
+\noindent\textbf{Output:} deterministic present value.
+
+\subsection{Coupled temporal convergence}
+
+\noindent\textbf{Input:} common path count, seed, fine level 384, divisors
+$12,24,48,96,192,384$.
+\begin{enumerate}
+  \item Simulate each antithetic factor pair on the fine grid with exact OU
+  transitions.
+  \item At fine indices matching a coarse stride, update that level's
+  trapezoidal short-rate integral.
+  \item Use the common terminal factor state to evaluate one payoff for every
+  level.
+  \item Record every level price and the pathwise difference from level 384.
+  \item Update price moments and paired-difference moments online.
+\end{enumerate}
+\noindent\textbf{Output:} price, price standard error, paired bias, and paired
+standard error for each level.
+
+\subsection{Multi-start calibration}
+
+\noindent\textbf{Input:} quote grid, parameter bounds, start count, seed.
+\begin{enumerate}
+  \item Add the documented default parameter vector.
+  \item Generate remaining positive parameters log-uniformly and correlation
+  uniformly within the bounds.
+  \item From each start, run the same bounded coordinate search on
+  equation~\eqref{eq:calibration-objective}.
+  \item Retain initial parameters, final parameters, RMSE, iteration count,
+  convergence flag, and per-quote residuals.
+  \item Select the lowest observed RMSE without discarding other runs.
+\end{enumerate}
+\noindent\textbf{Output:} complete run set and selected observed solution.
+
+\subsection{Out-of-sample LSM}
+
+\noindent\textbf{Input:} Bermudan claim, training and valuation configurations.
+\begin{enumerate}
+  \item Simulate training states and cumulative discounts at all exercise dates.
+  \item Fit continuation coefficients backward using
+  equation~\eqref{eq:lsm-normal}; store a fitted/not-fitted flag for each date.
+  \item Freeze every coefficient.
+  \item Simulate a second path set with a distinct valuation seed.
+  \item Apply the policy chronologically. Exercise at the first date where
+  intrinsic value exceeds fitted continuation; at the final date, exercise only
+  when intrinsic value is positive.
+  \item Record discounted payoff, exercise date, or explicit non-exercise.
+\end{enumerate}
+\noindent\textbf{Output:} training price, independent fixed-policy price,
+valuation standard error, exercise probabilities, and non-exercise probability.
+
+\section{Monte Carlo diagnostics}
+\label{app:mc-table}
+
+\begin{center}
+  \small\textbf{All European Monte Carlo observations and standardized
+  deviations from deterministic quadrature.}\par\medskip
+  \scriptsize
+  \input{generated/mc_diagnostics_table.tex}
+\end{center}
+
+\section{Calibration diagnostics}
+\label{app:calibration-tables}
+
+\subsection{Quote-level residuals}
+\begin{center}
+  \scriptsize
+  \input{generated/calibration_residuals_table.tex}
+\end{center}
+
+\subsection{All multi-start terminal solutions}
+\begin{center}
+  \scriptsize
+  \resizebox{\linewidth}{!}{\input{generated/multistart_table.tex}}
+\end{center}
+
+\section{Complete LSM diagnostics}
+\label{app:lsm}
+
+\subsection{In-sample convergence}
+\begin{center}
+  \scriptsize
+  \input{generated/lsm_table.tex}
+\end{center}
+
+\subsection{Independent fixed-policy valuation}
+\begin{center}
+  \scriptsize
+  \resizebox{\linewidth}{!}{\input{generated/lsm_oos_table.tex}}
+\end{center}
+
+\section{Stress-grid summary}
+\label{app:stress-table}
+
+\begin{center}
+  \small
+  \input{generated/stress_summary_table.tex}
+\end{center}
+All values are basis points of notional across the 27 cells in each regime:
+three expiries, three tenors, and three moneyness levels. The complete 135 rows
+remain in \texttt{paper/data/g2pp\_stress\_grid.csv}.
+
+\section{Wrong-way-risk sensitivity table}
+\label{app:wwr-table}
+
+\begin{center}
+  \small
+  \input{generated/wrong_way_grid_table.tex}
+\end{center}
+The change column is relative to the same seeded $\beta=0$ exposure simulation.
+Peak EPE is the maximum over the six reported exposure dates.
+
+\section{Validation matrix}
+\label{app:validation}
+
+\begin{center}
+\small\textbf{Table B.1: Component-level validation criteria.}\par\medskip
+\scriptsize
+\begin{tabular}{p{0.20\linewidth}p{0.52\linewidth}p{0.18\linewidth}}
+\toprule
+Component & Independent reference or property & Acceptance criterion\\
+\midrule
+Flat curve & $P(0,T)=e^{-rT}$ & $10^{-14}$\\
+Curve interpolation & supplied nodes reproduced & $10^{-14}$\\
+Swap & par NPV and telescoping floating leg & $10^{-8}$ currency\\
+Black--76 & known value and put--call parity & $10^{-6}$, $10^{-12}$\\
+Bachelier & ATM value and finite-difference signs & $10^{-12}$\\
+G2++ bonds & initial curve reproduction & $10^{-14}$\\
+G2++ covariance & non-negative variances and determinant & $10^{-15}$ floor\\
+European swaption & independent time-stepped Monte Carlo & 5 SE + 2 bp PV\\
+MC time grid & paired 12--384-step discount integrals & paired bias and SE\\
+QuantLib swaption & independently configured engine & 1\% relative\\
+Stress grid & 135 finite cells; strike and volatility monotonicity & strict property\\
+Calibration & eight starts; finite constrained solutions & RMSE $<0.001$\\
+LSM & one date equals European; independent fixed-policy valuation & exact/statistical\\
+DV01 & bucket sum versus parallel bump & 2\%\\
+Vega & weighted buckets versus global bump & 0.1\%\\
+XVA & non-negative outputs, netting, positive WWR direction & numerical epsilon\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Reproduction commands}
+\label{app:commands}
+
+The shortest full reproduction is:
+\begin{verbatim}
+./scripts/reproduce_paper.sh
+\end{verbatim}
+The equivalent explicit core sequence is:
+\begin{verbatim}
+cmake -S . -B build-paper -DCMAKE_BUILD_TYPE=Release \
+  -DQF_BUILD_BENCHMARKS=ON -DQF_WARNINGS_AS_ERRORS=ON
+cmake --build build-paper --parallel
+ctest --test-dir build-paper --output-on-failure
+./build-paper/qf_rates_validation paper/data
+python3 scripts/python_reference.py --require-quantlib
+python3 scripts/generate_paper_artifacts.py
+\end{verbatim}
+The paper can then be compiled with \texttt{latexmk} or Tectonic. Exact package
+versions and submission instructions are recorded in \texttt{paper/README.md}.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

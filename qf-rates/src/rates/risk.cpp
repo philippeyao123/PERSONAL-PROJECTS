@@ -88,4 +88,21 @@ std::vector<ScenarioResult> run_swap_scenarios(const InterestRateSwap& swap,
   return results;
 }
 
+std::vector<VolatilityScenarioResult> run_bachelier_volatility_scenarios(
+    OptionType type, Rate forward, Rate strike, Volatility base_volatility, Time expiry,
+    double annuity, Volatility shock, Money notional) {
+  if (base_volatility < 0.0 || shock <= 0.0 || expiry < 0.0 || annuity <= 0.0 || notional <= 0.0) {
+    throw ValidationError("Invalid volatility scenario inputs");
+  }
+  const double base =
+      bachelier_swaption(type, forward, strike, base_volatility, expiry, annuity, notional);
+  const auto scenario = [&](const std::string& name, double volatility) {
+    const double price =
+        bachelier_swaption(type, forward, strike, volatility, expiry, annuity, notional);
+    return VolatilityScenarioResult{name, volatility, price, price - base};
+  };
+  return {scenario("volatility_up", base_volatility + shock),
+          scenario("volatility_down", std::max(0.0, base_volatility - shock))};
+}
+
 }  // namespace qf

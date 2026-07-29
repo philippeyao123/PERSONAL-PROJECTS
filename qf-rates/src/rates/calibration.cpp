@@ -2,10 +2,12 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <memory>
 
 #include "qf/core/error.hpp"
 #include "qf/core/numerics.hpp"
+#include "qf/core/random.hpp"
 #include "qf/rates/options.hpp"
 #include "qf/rates/swap.hpp"
 
@@ -79,6 +81,46 @@ G2ppCalibrationResult calibrate_g2pp(YieldCurvePtr curve, std::span<const Swapti
   }
   return {calibrated_parameters, optimized.objective, optimized.iterations, optimized.converged,
           std::move(diagnostics)};
+}
+
+G2ppMultiStartResult calibrate_g2pp_multistart(YieldCurvePtr curve,
+                                               std::span<const SwaptionQuote> quotes,
+                                               G2ppMultiStartConfig config) {
+  if (!curve || quotes.empty()) {
+    throw ValidationError("Multi-start calibration requires a curve and quotes");
+  }
+  if (config.starts == 0U || config.starts > 64U) {
+    throw ValidationError("Multi-start calibration requires between 1 and 64 starts");
+  }
+  constexpr std::array<double, 5> lower{0.005, 0.01, 0.0001, 0.0001, -0.95};
+  constexpr std::array<double, 5> upper{1.00, 1.50, 0.10, 0.10, 0.95};
+  RandomEngine random(config.seed);
+  const auto log_uniform = [&](std::size_t index) {
+    return std::exp(std::log(lower[index]) +
+                    random.uniform() * (std::log(upper[index]) - std::log(lower[index])));
+  };
+  std::vector<G2ppParameters> initial_values;
+  initial_values.reserve(config.starts);
+  initial_values.push_back({});
+  while (initial_values.size() < config.starts) {
+    initial_values.push_back({log_uniform(0U), log_uniform(1U), log_uniform(2U), log_uniform(3U),
+                              lower[4] + random.uniform() * (upper[4] - lower[4])});
+  }
+
+  G2ppMultiStartResult result;
+  result.runs.reserve(config.starts);
+  double best_rmse = std::numeric_limits<double>::infinity();
+  for (std::size_t index = 0; index < initial_values.size(); ++index) {
+    auto calibration = calibrate_g2pp(curve, quotes, initial_values[index]);
+    result.total_iterations += calibration.iterations;
+    if (calibration.rmse < best_rmse) {
+      best_rmse = calibration.rmse;
+      result.best_run = index;
+      result.best = calibration;
+    }
+    result.runs.push_back({initial_values[index], std::move(calibration)});
+  }
+  return result;
 }
 
 }  // namespace qf

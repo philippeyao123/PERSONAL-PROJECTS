@@ -1,0 +1,4 @@
+method,standard_error,variance_ratio
+Plain,0.0417013025198,1
+Antithetic,0.0332883797815,0.637215123797
+Control variate,0.0189880888848,0.207330536605

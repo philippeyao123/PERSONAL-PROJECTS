@@ -1,6 +1,6 @@
 # qf-rates
 
-[![CI](https://github.com/OWNER/qf-rates/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/qf-rates/actions/workflows/ci.yml)
+[![CI](https://github.com/philippeyao123/qf-rates/actions/workflows/ci.yml/badge.svg)](https://github.com/philippeyao123/qf-rates/actions/workflows/ci.yml)
 
 `qf-rates` is a dependency-light C++20 library for interest-rate pricing and risk. Release
 `v0.1.0` covers deterministic yield curves, vanilla swaps, Black-76 and Bachelier options, the
@@ -10,6 +10,32 @@ extension.
 
 The project is educational and suitable for model prototyping and technical demonstrations. It is
 not a production trading or regulatory capital system.
+
+## Research paper
+
+The repository includes the reproducible manuscript
+**“Reproducible Numerical Validation of G2++ Swaption Pricing: Quadrature,
+Monte Carlo, Calibration, and Bermudan Exercise.”** It studies cross-engine
+pricing error and its propagation to risk; `qf-rates` is the executable research
+artifact rather than the paper's research question.
+
+- [Manuscript source](paper/main.tex)
+- [Reproducibility and arXiv guide](paper/README.md)
+- [Suggested arXiv metadata](paper/arxiv-metadata.md)
+- [Machine-readable results](paper/data/)
+- [Citation metadata](CITATION.cff)
+
+Build the complete research artifact with:
+
+```bash
+python3 -m pip install pybind11 QuantLib matplotlib
+./scripts/reproduce_paper.sh
+./scripts/package_arxiv.sh
+```
+
+The compiled paper and arXiv source archive are written to `output/pdf/`. An
+arXiv posting is a public preprint and does not imply peer review or guaranteed
+acceptance.
 
 ## Build
 
@@ -49,9 +75,12 @@ Optional Python module:
 python3 -m pip install pybind11
 cmake -S . -B build-py -DQF_BUILD_TESTS=OFF -DQF_BUILD_PYTHON=ON
 cmake --build build-py --parallel
-PYTHONPATH=build-py python3 -c \
-  "import qf_rates_python as q; print(q.black76(q.OptionType.Call,100,100,.2,1,.95).price)"
+PYTHONPATH=build-py python3 scripts/python_bindings_smoke.py
 ```
+
+The bindings cover curves, swaps, Black-76/Bachelier, G2++, European Monte Carlo, Bermudan LSM,
+coupled time-step convergence, out-of-sample LSM, multi-start calibration, DV01 and volatility
+scenarios. They are intentionally a research API rather than a stable production ABI.
 
 ## Compact API
 
@@ -96,15 +125,23 @@ benchmarks/       opt-in micro-benchmark
 python/           opt-in pybind11 bindings
 docs/             architecture, validation and technical note
 scripts/          reproducible local commands and Python cross-check
+paper/            manuscript, frozen data, figures and arXiv metadata
+output/pdf/       compiled paper and arXiv source archive
 ```
 
 ## Quality and limitations
 
-The CI matrix builds on macOS and Linux with warnings-as-errors, runs tests, checks formatting, and
-runs ASan/UBSan on Linux. The G2++ European engine uses three-dimensional order-8 Gauss-Hermite
+The CI matrix builds on macOS and Linux with warnings-as-errors, runs tests, executes clang-format
+and clang-tidy, validates the Python API against QuantLib, and runs ASan/UBSan on Linux. The G2++
+European engine uses three-dimensional order-8 Gauss-Hermite
 quadrature over the jointly Gaussian discount integral and terminal factors. The Monte-Carlo engine
-is an independent discretized validation implementation. LSM uses six polynomial basis functions
-with a European lower-bound safeguard.
+is an independent discretized validation implementation with coupled 12--384-step bias estimates.
+The research benchmark also exports a 135-cell G2++ stress grid and a separate,
+convention-aligned 135-cell QuantLib comparison with finite-difference risk
+checks. LSM uses linear or quadratic
+polynomial bases; the publication workflow fits exercise policies on training paths and evaluates
+them on independent paths. Calibration supports eight-start seeded optimization with every local
+result retained for audit.
 
 The XVA/SIMM module is deliberately simplified: deterministic hazard rates, unilateral
 discretization, no collateral, proxy WWR scaling, and illustrative SIMM weights. Consult
@@ -114,6 +151,12 @@ risk. The reproducible performance baseline is in
 
 ## Release
 
-The source tree is prepared for `v0.1.0`. Replace `OWNER` in the badge after publishing, then follow
-[`docs/release-checklist.md`](docs/release-checklist.md). Changes are recorded in
-[`CHANGELOG.md`](CHANGELOG.md).
+Development is integrated under `qf-rates/` in the
+[`PERSONAL-PROJECTS`](https://github.com/philippeyao123/PERSONAL-PROJECTS) monorepo. A subtree split
+is also published as the autonomous
+[`philippeyao123/qf-rates`](https://github.com/philippeyao123/qf-rates) repository, with its own CI,
+tag and GitHub release. This preserves monorepo integration while allowing independent cloning,
+building and versioning.
+
+Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md); the release process is documented in
+[`docs/release-checklist.md`](docs/release-checklist.md).

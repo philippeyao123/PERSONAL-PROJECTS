@@ -1,0 +1,69 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bachelier(1900)]{bachelier1900}
+Louis Bachelier.
+\newblock Th{\'e}orie de la sp{\'e}culation.
+\newblock \emph{Annales scientifiques de l'{\'E}cole Normale Sup{\'e}rieure},
+  17:\penalty0 21--86, 1900.
+\newblock URL \url{http://www.numdam.org/item/ASENS_1900_3_17__21_0/}.
+
+\bibitem[Black(1976)]{black1976}
+Fischer Black.
+\newblock The pricing of commodity contracts.
+\newblock \emph{Journal of Financial Economics}, 3\penalty0 (1--2):\penalty0
+  167--179, 1976.
+\newblock \doi{10.1016/0304-405X(76)90024-6}.
+
+\bibitem[Brigo and Mercurio(2006)]{brigo2006}
+Damiano Brigo and Fabio Mercurio.
+\newblock \emph{Interest Rate Models---Theory and Practice: With Smile,
+  Inflation and Credit}.
+\newblock Springer, Berlin, Heidelberg, 2 edition, 2006.
+\newblock \doi{10.1007/978-3-540-34604-3}.
+
+\bibitem[Glasserman(2003)]{glasserman2003}
+Paul Glasserman.
+\newblock \emph{Monte Carlo Methods in Financial Engineering}, volume~53 of
+  \emph{Stochastic Modelling and Applied Probability}.
+\newblock Springer, New York, 2003.
+\newblock \doi{10.1007/978-0-387-21617-1}.
+
+\bibitem[Higham(2002)]{higham2002}
+Nicholas~J. Higham.
+\newblock \emph{Accuracy and Stability of Numerical Algorithms}.
+\newblock Society for Industrial and Applied Mathematics, Philadelphia, 2
+  edition, 2002.
+\newblock \doi{10.1137/1.9780898718027}.
+
+\bibitem[Longstaff and Schwartz(2001)]{longstaff2001}
+Francis~A. Longstaff and Eduardo~S. Schwartz.
+\newblock Valuing american options by simulation: A simple least-squares
+  approach.
+\newblock \emph{The Review of Financial Studies}, 14\penalty0 (1):\penalty0
+  113--147, 2001.
+\newblock \doi{10.1093/rfs/14.1.113}.
+
+\bibitem[Sandve et~al.(2013)Sandve, Nekrutenko, Taylor, and Hovig]{sandve2013}
+Geir~Kjetil Sandve, Anton Nekrutenko, James Taylor, and Eivind Hovig.
+\newblock Ten simple rules for reproducible computational research.
+\newblock PLOS Computational Biology, 2013.
+
+\bibitem[{The QuantLib Contributors}(2026)]{quantlib}
+{The QuantLib Contributors}.
+\newblock Quantlib: A free/open-source library for quantitative finance.
+\newblock \url{https://www.quantlib.org/}, 2026.
+\newblock Version 1.43, accessed 27 July 2026.
+
+\bibitem[Welford(1962)]{welford1962}
+B.~P. Welford.
+\newblock Note on a method for calculating corrected sums of squares and
+  products.
+\newblock \emph{Technometrics}, 4\penalty0 (3):\penalty0 419--420, 1962.
+\newblock \doi{10.1080/00401706.1962.10490022}.
+
+\end{thebibliography}

@@ -1,0 +1,37 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "qf-rates",
+  "description": "Reproducible C++20 artifact for systematic G2++ swaption pricing validation, calibration, Bermudan exercise, and risk propagation.",
+  "version": "0.1.0",
+  "dateCreated": "2026-07-27",
+  "dateModified": "2026-07-29",
+  "codeRepository": "https://github.com/philippeyao123/qf-rates",
+  "license": "https://spdx.org/licenses/MIT",
+  "programmingLanguage": [
+    "C++",
+    "Python"
+  ],
+  "runtimePlatform": "C++20",
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Bathaix Philippe-Emmanuel",
+      "familyName": "Yao"
+    }
+  ],
+  "keywords": [
+    "computational finance",
+    "G2++",
+    "interest rates",
+    "swaption",
+    "Monte Carlo",
+    "Longstaff-Schwartz"
+  ],
+  "softwareRequirements": [
+    "CMake >= 3.20",
+    "C++20 compiler",
+    "Eigen 3.4.0",
+    "Catch2 3.7.1"
+  ]
+}

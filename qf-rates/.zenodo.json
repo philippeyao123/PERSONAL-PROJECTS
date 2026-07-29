@@ -1,0 +1,30 @@
+{
+  "title": "qf-rates: Reproducible G2++ Swaption Validation Artifact",
+  "description": "C++20 research software and frozen evidence for systematic G2++ swaption validation against Monte Carlo and QuantLib, including calibration, Bermudan exercise, and risk propagation.",
+  "upload_type": "software",
+  "publication_date": "2026-07-27",
+  "version": "0.1.0",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Yao, Bathaix Philippe-Emmanuel"
+    }
+  ],
+  "keywords": [
+    "computational finance",
+    "interest-rate derivatives",
+    "G2++",
+    "swaption",
+    "Monte Carlo",
+    "Longstaff-Schwartz",
+    "C++20",
+    "reproducible research"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/philippeyao123/qf-rates",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

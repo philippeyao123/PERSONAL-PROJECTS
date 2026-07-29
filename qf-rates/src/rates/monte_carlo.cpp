@@ -141,4 +141,94 @@ MonteCarloResult g2pp_european_swaption_mc(const G2ppModel& model, const Europea
   return result;
 }
 
+std::vector<MonteCarloTimeConvergenceResult> g2pp_european_swaption_mc_time_convergence(
+    const G2ppModel& model, const EuropeanSwaption& swaption,
+    MonteCarloTimeConvergenceConfig config) {
+  if (config.paths < 2U || config.finest_time_steps == 0U || swaption.expiry <= 0.0 ||
+      config.time_steps.empty()) {
+    throw ValidationError("Invalid G2++ time-convergence configuration");
+  }
+  if (config.antithetic && config.paths % 2U != 0U) {
+    throw ValidationError("Antithetic time convergence requires an even path count");
+  }
+  for (std::size_t index = 0; index < config.time_steps.size(); ++index) {
+    const std::size_t current = config.time_steps[index];
+    if (current == 0U || config.finest_time_steps % current != 0U ||
+        (index > 0U && current <= config.time_steps[index - 1U])) {
+      throw ValidationError(
+          "Time-convergence levels must be increasing divisors of the finest grid");
+    }
+  }
+  if (config.time_steps.back() != config.finest_time_steps) {
+    throw ValidationError("Time-convergence levels must include the finest grid last");
+  }
+
+  const std::size_t levels = config.time_steps.size();
+  std::vector<std::size_t> strides(levels);
+  for (std::size_t level = 0; level < levels; ++level) {
+    strides[level] = config.finest_time_steps / config.time_steps[level];
+  }
+  std::vector<OnlineStatistics> price_statistics(levels);
+  std::vector<OnlineStatistics> difference_statistics(levels);
+  RandomEngine random(config.seed);
+  const double fine_step = swaption.expiry / static_cast<double>(config.finest_time_steps);
+  const std::size_t observations = config.antithetic ? config.paths / 2U : config.paths;
+  for (std::size_t path = 0; path < observations; ++path) {
+    FactorState state{};
+    FactorState opposite{};
+    const double initial_rate = model.short_rate(0.0, {});
+    std::vector<double> integrals(levels, 0.0);
+    std::vector<double> opposite_integrals(levels, 0.0);
+    std::vector<double> previous_rates(levels, initial_rate);
+    std::vector<double> opposite_previous_rates(levels, initial_rate);
+    for (std::size_t fine_index = 0; fine_index < config.finest_time_steps; ++fine_index) {
+      const double first = random.normal();
+      const double second = random.normal();
+      const FactorState next = model.evolve(state, fine_step, first, second);
+      const FactorState opposite_next = model.evolve(opposite, fine_step, -first, -second);
+      const Time time = static_cast<double>(fine_index + 1U) * fine_step;
+      const double current_rate = model.short_rate(time, next);
+      const double opposite_current_rate = model.short_rate(time, opposite_next);
+      for (std::size_t level = 0; level < levels; ++level) {
+        if ((fine_index + 1U) % strides[level] != 0U) {
+          continue;
+        }
+        const double coarse_step = fine_step * static_cast<double>(strides[level]);
+        integrals[level] += 0.5 * coarse_step * (previous_rates[level] + current_rate);
+        opposite_integrals[level] +=
+            0.5 * coarse_step * (opposite_previous_rates[level] + opposite_current_rate);
+        previous_rates[level] = current_rate;
+        opposite_previous_rates[level] = opposite_current_rate;
+      }
+      state = next;
+      opposite = opposite_next;
+    }
+    const double payoff = swaption_payoff(model, swaption, state);
+    const double opposite_payoff = swaption_payoff(model, swaption, opposite);
+    std::vector<double> values(levels);
+    for (std::size_t level = 0; level < levels; ++level) {
+      values[level] = std::exp(-integrals[level]) * payoff;
+      if (config.antithetic) {
+        values[level] =
+            0.5 * (values[level] + std::exp(-opposite_integrals[level]) * opposite_payoff);
+      }
+    }
+    const double finest_value = values.back();
+    for (std::size_t level = 0; level < levels; ++level) {
+      price_statistics[level].add(values[level]);
+      difference_statistics[level].add(values[level] - finest_value);
+    }
+  }
+
+  std::vector<MonteCarloTimeConvergenceResult> results;
+  results.reserve(levels);
+  for (std::size_t level = 0; level < levels; ++level) {
+    results.push_back({config.time_steps[level], price_statistics[level].mean(),
+                       price_statistics[level].standard_error(),
+                       difference_statistics[level].mean(),
+                       difference_statistics[level].standard_error()});
+  }
+  return results;
+}
+
 }  // namespace qf
