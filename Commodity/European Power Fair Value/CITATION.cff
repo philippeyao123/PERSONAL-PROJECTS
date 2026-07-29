@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or its frozen research artifacts, please cite the paper."
-title: "European Power Fair Value: Reproducible Day-Ahead Forecasting and Prompt-Proxy Diagnostics for the Germany-Luxembourg Market"
+title: "Leakage-Controlled Day-Ahead Electricity Price Forecasting: Walk-Forward Evidence from the Germany-Luxembourg Market"
 type: software
 authors:
   - family-names: "Yao"

@@ -1,5 +1,9 @@
 # European Power Fair Value
 
+Companion repository for the paper **“Leakage-Controlled Day-Ahead
+Electricity Price Forecasting: Walk-Forward Evidence from the
+Germany-Luxembourg Market.”**
+
 Reproducible DE-LU day-ahead electricity-price forecasting, uncertainty
 diagnostics, and prompt-proxy research.
 

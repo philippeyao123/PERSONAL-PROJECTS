@@ -2,8 +2,8 @@
 
 ## Title
 
-European Power Fair Value: Reproducible Day-Ahead Forecasting and
-Prompt-Proxy Diagnostics for the Germany-Luxembourg Market
+Leakage-Controlled Day-Ahead Electricity Price Forecasting:
+Walk-Forward Evidence from the Germany-Luxembourg Market
 
 ## Authors
 
