@@ -1,7 +1,7 @@
 {
-  "title": "Leakage-Controlled Day-Ahead Electricity Price Forecasting: Walk-Forward Evidence from the Germany-Luxembourg Market",
+  "title": "Auditable Day-Ahead Electricity Price Forecasting: Leakage Control, Conditional Failure Maps, and Walk-Forward Evidence from Germany-Luxembourg",
   "upload_type": "software",
-  "description": "Source code, frozen evidence, figures, tests, and arXiv manuscript for a DE-LU day-ahead electricity-price forecasting study.",
+  "description": "Source code, frozen evidence, figures, tests, and arXiv manuscript for an auditable DE-LU day-ahead electricity-price forecasting study with leakage control and conditional failure diagnostics.",
   "creators": [
     {
       "name": "Yao, Bathaix Philippe-Emmanuel"

@@ -17,6 +17,8 @@ explicitly labelled weather-augmented sensitivity.
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import holidays
 import numpy as np
 import pandas as pd
@@ -86,13 +88,20 @@ ALL_FEATURES = FEATURES + WEATHER_FEATURES
 TARGET = "price"
 
 
-def load_features() -> pd.DataFrame:
+def load_features(feature_cols: Sequence[str] = FEATURES) -> pd.DataFrame:
+    """Load a sample conditioned only on the requested information set.
+
+    The primary publication sample must not depend on optional weather
+    availability. Weather-augmented sensitivity runs request ``ALL_FEATURES``
+    explicitly and receive their own complete-case sample.
+    """
     df = pd.read_csv(DATA / "dataset.csv", index_col=0)
     df.index = pd.to_datetime(df.index, utc=True)
     feats = build_features(df)
     # forward-fill tiny gaps in exogenous forecasts (never the target)
     feats[ALL_FEATURES] = feats[ALL_FEATURES].ffill(limit=3)
-    feats = feats.dropna(subset=ALL_FEATURES + [TARGET])
+    required = list(dict.fromkeys([*feature_cols, TARGET]))
+    feats = feats.dropna(subset=required)
     return feats
 
 

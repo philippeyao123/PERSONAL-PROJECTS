@@ -11,9 +11,14 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from features import build_features  # noqa: E402
+from features import ALL_FEATURES, FEATURES, build_features, load_features  # noqa: E402
 from qa import run_qa  # noqa: E402
-from research import hac_mean_test, prequential_conformal  # noqa: E402
+from research import (  # noqa: E402
+    conformal_hour_tests,
+    hac_mean_test,
+    moving_block_day_bootstrap_ci,
+    prequential_conformal,
+)
 from trading import build_views  # noqa: E402
 
 
@@ -46,8 +51,24 @@ def test_hac_test_sign_favours_lower_candidate_loss() -> None:
     differential = np.linspace(1.0, 2.0, 100)
     result = hac_mean_test(differential, lag=7)
     assert result["mean_loss_improvement"] > 0
-    assert result["statistic"] > 0
+    assert result["hln_statistic"] > 0
+    assert 0 < result["hln_scale"] <= 1
     assert result["p_value"] < 0.01
+
+
+def test_primary_sample_is_not_conditioned_on_weather() -> None:
+    primary = load_features(FEATURES)
+    weather = load_features(ALL_FEATURES)
+    assert len(primary) >= len(weather)
+    assert primary[FEATURES + ["price"]].notna().all().all()
+
+
+def test_moving_block_bootstrap_is_seeded_and_order_aware() -> None:
+    values = np.arange(30, dtype=float)
+    first = moving_block_day_bootstrap_ci(values, block=7, reps=200, seed=8)
+    second = moving_block_day_bootstrap_ci(values, block=7, reps=200, seed=8)
+    assert first == second
+    assert first[0] < values.mean() < first[1]
 
 
 def test_conformal_calibration_is_strictly_prequential() -> None:
@@ -75,6 +96,7 @@ def test_walk_forward_artifact_is_one_complete_year() -> None:
     assert len(days.unique()) == 365
     assert len(predictions) == 8760
     assert not predictions.index.duplicated().any()
+    assert {"naive_w", "ridge", "ridge_hourly", "lgbm"}.issubset(predictions)
 
 
 def test_trading_statistics_exclude_right_censored_views() -> None:
@@ -98,6 +120,18 @@ def test_reported_conformal_coverage_matches_rows() -> None:
         diagnostics["covered"].mean()
         - metrics["conformal"]["empirical_coverage"]
     ) < 1e-12
+    tests = conformal_hour_tests(diagnostics)
+    assert tests["significant_normal_5pct"].sum() == metrics["conformal"][
+        "normal_approx_significant_hours"
+    ]
+
+
+def test_signal_benchmarks_include_naive_and_perfect_information_bounds() -> None:
+    frame = pd.read_csv(ROOT / "data/signal_benchmarks.csv").set_index("input")
+    assert {"always_long", "weekly_naive", "ridge_hourly", "lightgbm", "perfect_day_d"}.issubset(
+        frame.index
+    )
+    assert not bool(frame.loc["perfect_day_d", "feasible"])
 
 
 def test_dataset_fingerprint_matches_report() -> None:

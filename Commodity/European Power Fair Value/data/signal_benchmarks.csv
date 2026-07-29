@@ -1,0 +1,7 @@
+input,feasible,evaluable_active_days,hit_rate,average_captured,interpretation
+always_long,True,352,0.48295454545454547,0.5497716703869049,absence-of-signal persistence reference
+weekly_naive,True,121,0.5454545454545454,1.7080730140906537,same signal construction
+ridge,True,148,0.7162162162162162,12.441235125867326,same signal construction
+ridge_hourly,True,150,0.7333333333333333,13.320125105935128,same signal construction
+lightgbm,True,144,0.7430555555555556,13.245551886178685,same signal construction
+perfect_day_d,False,139,0.8129496402877698,14.95990786358491,infeasible same-day perfect-information upper bound

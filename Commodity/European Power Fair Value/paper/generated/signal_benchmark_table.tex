@@ -1,0 +1,12 @@
+\begin{tabular}{lcrrr}
+\toprule
+Signal input & Feasible & Active days & Hit rate & Mean spread \\
+\midrule
+Always long (no model signal) & yes & 352 & 48.3\% & 0.55 \\
+Weekly naive fair value & yes & 121 & 54.5\% & 1.71 \\
+Pooled Ridge fair value & yes & 148 & 71.6\% & 12.44 \\
+Hourly Ridge fair value & yes & 150 & 73.3\% & 13.32 \\
+LightGBM fair value & yes & 144 & 74.3\% & 13.25 \\
+Perfect day-D baseload (infeasible) & no & 139 & 81.3\% & 14.96 \\
+\bottomrule
+\end{tabular}

@@ -19,7 +19,8 @@ plt.rcParams.update({
     "grid.alpha": 0.3, "axes.spines.top": False, "axes.spines.right": False,
 })
 C = {"actual": "#1a1a2e", "pred": "#e63946", "ridge": "#457b9d",
-     "fv": "#e63946", "prompt": "#1d3557", "long": "#2a9d8f", "short": "#e76f51"}
+     "ridge_hourly": "#7c3aed", "fv": "#e63946", "prompt": "#1d3557",
+     "long": "#2a9d8f", "short": "#e76f51"}
 
 
 def save(fig: plt.Figure, stem: str) -> None:
@@ -88,11 +89,18 @@ def fig_mae_by_hour(res: pd.DataFrame) -> None:
         lambda x: pd.Series({
             "lgbm": (x["y_true"] - x["lgbm"]).abs().mean(),
             "ridge": (x["y_true"] - x["ridge"]).abs().mean(),
+            "ridge_hourly": (x["y_true"] - x["ridge_hourly"]).abs().mean(),
             "naive": (x["y_true"] - x["naive_w"]).abs().mean()}),
         include_groups=False)
     fig, ax = plt.subplots(figsize=(7.5, 3.0))
     ax.plot(g.index, g["naive"], color="#a8a8a8", ls="--", label="naive")
     ax.plot(g.index, g["ridge"], color=C["ridge"], label="ridge")
+    ax.plot(
+        g.index,
+        g["ridge_hourly"],
+        color=C["ridge_hourly"],
+        label="hourly ridge",
+    )
     ax.plot(g.index, g["lgbm"], color=C["pred"], lw=1.6, label="lgbm")
     ax.set_xlabel("hour (CET/CEST)"); ax.set_ylabel("MAE (EUR/MWh)")
     ax.set_title("Forecast error by delivery hour (errors peak at the evening ramp)")
@@ -134,8 +142,8 @@ def fig_fair_value(daily: pd.DataFrame) -> None:
 
 def fig_model_uncertainty() -> None:
     metrics = pd.read_csv(DATA / "model_comparison.csv").set_index("model")
-    order = ["naive_w", "ridge", "lgbm"]
-    labels = ["Weekly naive", "Ridge", "LightGBM"]
+    order = ["naive_w", "ridge", "ridge_hourly", "lgbm"]
+    labels = ["Weekly naive", "Pooled Ridge", "Hourly Ridge", "LightGBM"]
     frame = metrics.loc[order]
     yerr = np.vstack([
         frame["mae"] - frame["mae_ci_low"],
@@ -144,24 +152,25 @@ def fig_model_uncertainty() -> None:
     fig, ax = plt.subplots(figsize=(6.2, 3.4))
     bars = ax.bar(
         labels, frame["mae"], yerr=yerr, capsize=4,
-        color=["#9ca3af", C["ridge"], C["pred"]],
+        color=["#9ca3af", C["ridge"], C["ridge_hourly"], C["pred"]],
     )
     ax.bar_label(bars, fmt="%.2f", padding=4)
     ax.set_ylabel("MAE (EUR/MWh)")
-    ax.set_title("Full-year walk-forward error with day-block 95% intervals")
+    ax.set_title("Full-year walk-forward error with 7-day block 95% intervals")
     save(fig, "07_model_uncertainty")
 
 
 def fig_cumulative_skill(res: pd.DataFrame) -> None:
     days = res.index.tz_convert("Europe/Berlin").normalize()
     daily = pd.DataFrame(index=res.index)
-    for model in ("naive_w", "ridge", "lgbm"):
+    for model in ("naive_w", "ridge", "ridge_hourly", "lgbm"):
         daily[model] = (res[model] - res["y_true"]).abs()
     daily = daily.groupby(days).mean()
     fig, ax = plt.subplots(figsize=(8.2, 3.4))
     for comparator, color, label in (
         ("naive_w", "#6b7280", "LightGBM vs weekly naive"),
         ("ridge", C["ridge"], "LightGBM vs Ridge"),
+        ("ridge_hourly", C["ridge_hourly"], "LightGBM vs hourly Ridge"),
     ):
         improvement = (daily[comparator] - daily["lgbm"]).expanding().mean()
         ax.plot(improvement.index, improvement, color=color, lw=1.5, label=label)
@@ -228,7 +237,7 @@ def fig_conformal_coverage() -> None:
     ax.set_xticks(range(0, 24, 2))
     ax.set_xlabel("Delivery hour (CET/CEST)")
     ax.set_ylabel("Empirical coverage")
-    ax.set_title("Conformal coverage reveals daytime undercoverage")
+    ax.set_title("Marginal 90% coverage masks hour-conditional failure")
     ax.legend(fontsize=8)
     save(fig, "11_conformal_coverage")
 
@@ -284,6 +293,7 @@ def fig_error_quantiles(res: pd.DataFrame) -> None:
     for model, color, label in (
         ("naive_w", "#9ca3af", "Weekly naive"),
         ("ridge", C["ridge"], "Ridge"),
+        ("ridge_hourly", C["ridge_hourly"], "Hourly Ridge"),
         ("lgbm", C["pred"], "LightGBM"),
     ):
         errors = (res[model] - res["y_true"]).abs()

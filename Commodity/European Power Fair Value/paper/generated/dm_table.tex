@@ -1,8 +1,9 @@
 \begin{tabular}{lrrrr}
 \toprule
-Comparison & Mean daily MAE gain & HAC SE & Statistic & Two-sided $p$ \\
+Comparison & Mean daily MAE gain & HAC SE & HLN statistic & Two-sided $p$ \\
 \midrule
-LightGBM vs. Weekly naive & 19.29 & 1.64 & 11.80 & $2.05\times 10^{-27}$ \\
-LightGBM vs. Ridge & 3.52 & 0.37 & 9.62 & $1.11\times 10^{-19}$ \\
+LightGBM vs. Weekly naive & 19.29 & 1.64 & 11.78 & $2.35\times 10^{-27}$ \\
+LightGBM vs. pooled Ridge & 3.52 & 0.37 & 9.61 & $1.23\times 10^{-19}$ \\
+LightGBM vs. hourly Ridge & 2.13 & 0.37 & 5.82 & $1.28\times 10^{-8}$ \\
 \bottomrule
 \end{tabular}

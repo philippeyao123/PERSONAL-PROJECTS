@@ -13,5 +13,9 @@ cp "$ROOT"/paper/generated/*.tex "$STAGE/generated/"
 cp "$ROOT"/paper/figures/*.pdf "$STAGE/figures/"
 
 ARCHIVE="$ROOT/output/pdf/european-power-fair-value-arxiv-source.tar.gz"
-tar -czf "$ARCHIVE" -C "$STAGE" .
+COPYFILE_DISABLE=1 tar \
+  --exclude='._*' \
+  --exclude='.DS_Store' \
+  -czf "$ARCHIVE" \
+  -C "$STAGE" .
 echo "arXiv source archive: $ARCHIVE"

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.0 - 2026-07-29
+
+- Refocused the manuscript on auditability, leakage control, and conditional
+  failure maps rather than a generic model-performance claim.
+- Decoupled the primary complete-case sample from the optional weather
+  sensitivity and documented the Energy-Charts endpoint semantics.
+- Added a stronger 24-model hour-specific Ridge baseline, first-90-day
+  sensitivity, and prequential bias correction.
+- Replaced independent day resampling with a seven-day moving-block bootstrap
+  and added Harvey-Leybourne-Newbold finite-sample corrections.
+- Added formal hour-by-hour coverage tests with Holm adjustment, interval
+  score and pinball diagnostics, and moving-block signal uncertainty.
+- Bounded the prompt-proxy result with no-signal, naive, linear-model, and
+  infeasible perfect-information references.
+- Replaced manuscript result literals with generated macros, expanded the
+  literature, switched the paper to A4, and hardened arXiv packaging against
+  AppleDouble files.
+- Expanded the executable test suite from ten to thirteen tests.
+
 ## 1.0.0 - 2026-07-28
 
 - Expanded the walk-forward test from 180 to 365 local delivery days.

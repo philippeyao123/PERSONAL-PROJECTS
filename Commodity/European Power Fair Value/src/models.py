@@ -4,6 +4,7 @@ Models
 ------
   naive_w   : same hour, same weekday last week (price_lag168)   [baseline 1]
   ridge     : standardised linear model                          [baseline 2]
+  ridge_hourly: 24 standardised Ridge models by delivery hour    [baseline 3]
   lgbm      : LightGBM gradient boosting                         [improved]
 
 Validation
@@ -36,6 +37,7 @@ LGBM_PARAMS = dict(
     colsample_bytree=0.9, reg_lambda=1.0, random_state=42, n_jobs=-1,
     deterministic=True, force_col_wise=True, verbose=-1,
 )
+MODEL_NAMES = ("naive_w", "ridge", "ridge_hourly", "lgbm")
 
 
 def make_models() -> dict:
@@ -61,11 +63,13 @@ def walk_forward(
     days = local_days.unique().sort_values()
     test_days = days[-test_days_count:]
 
-    preds = {name: [] for name in ("naive_w", "ridge", "lgbm")}
+    preds = {name: [] for name in MODEL_NAMES}
     idx_all, y_all = [], []
     fitted = {}
+    fitted_hourly = {}
     importance_sum = pd.Series(0.0, index=feature_cols)
     fit_count = 0
+    local_hours = feats.index.tz_convert("Europe/Berlin").hour
 
     for i, day in enumerate(test_days):
         if i % RETRAIN_EVERY == 0:
@@ -73,6 +77,15 @@ def walk_forward(
             X_tr = feats.loc[train_mask, feature_cols]
             y_tr = feats.loc[train_mask, TARGET]
             fitted = {n: m.fit(X_tr, y_tr) for n, m in make_models().items()}
+            fitted_hourly = {}
+            for hour in range(24):
+                hour_mask = train_mask & (local_hours == hour)
+                fitted_hourly[hour] = make_pipeline(
+                    StandardScaler(), Ridge(alpha=10.0)
+                ).fit(
+                    feats.loc[hour_mask, feature_cols],
+                    feats.loc[hour_mask, TARGET],
+                )
             importance_sum += pd.Series(
                 fitted["lgbm"].feature_importances_, index=feature_cols
             )
@@ -86,13 +99,21 @@ def walk_forward(
         preds["naive_w"].extend(X_te["price_lag168"])
         for n in ("ridge", "lgbm"):
             preds[n].extend(fitted[n].predict(X_te))
+        hourly_prediction = pd.Series(index=X_te.index, dtype=float)
+        test_hours = X_te.index.tz_convert("Europe/Berlin").hour
+        for hour in np.unique(test_hours):
+            mask = test_hours == hour
+            hourly_prediction.loc[X_te.index[mask]] = fitted_hourly[int(hour)].predict(
+                X_te.loc[X_te.index[mask]]
+            )
+        preds["ridge_hourly"].extend(hourly_prediction.loc[X_te.index])
 
     res = pd.DataFrame({"y_true": y_all, **preds},
                        index=pd.DatetimeIndex(idx_all, name="ts_utc"))
 
     metrics = {}
     mae_naive = mean_absolute_error(res["y_true"], res["naive_w"])
-    for n in ("naive_w", "ridge", "lgbm"):
+    for n in MODEL_NAMES:
         mae = mean_absolute_error(res["y_true"], res[n])
         metrics[n] = {
             "MAE": round(mae, 2),
@@ -109,6 +130,7 @@ def walk_forward(
         "observations": int(len(res)),
         "refits": fit_count,
         "retrain_every_days": RETRAIN_EVERY,
+        "initial_training_days": int((days < test_days[0]).sum()),
     }
 
 

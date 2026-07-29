@@ -1,6 +1,6 @@
 \documentclass[11pt]{article}
 
-\usepackage[letterpaper,margin=0.88in]{geometry}
+\usepackage[a4paper,margin=0.88in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{array}
@@ -20,7 +20,7 @@
   linkcolor=blue!55!black,
   citecolor=blue!55!black,
   urlcolor=blue!55!black,
-  pdftitle={Leakage-Controlled Day-Ahead Electricity Price Forecasting: Walk-Forward Evidence from the Germany-Luxembourg Market},
+  pdftitle={Auditable Day-Ahead Electricity Price Forecasting: Leakage Control, Conditional Failure Maps, and Walk-Forward Evidence from Germany-Luxembourg},
   pdfauthor={Bathaix Philippe-Emmanuel Yao}
 }
 
@@ -35,8 +35,9 @@
 \newcommand{\RMSE}{\operatorname{RMSE}}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{Leakage-Controlled Day-Ahead Electricity Price Forecasting:\\
-Walk-Forward Evidence from the Germany--Luxembourg Market}
+\title{Auditable Day-Ahead Electricity Price Forecasting:\\
+Leakage Control, Conditional Failure Maps, and Walk-Forward Evidence from
+Germany--Luxembourg}
 \author{Bathaix Philippe-Emmanuel Yao}
 \date{July 2026}
 
@@ -55,33 +56,34 @@ day-ahead market.  The artifact combines \DataRows{} hourly observations from
 prices, and calendar variables.  Its primary claim excludes weather covariates
 whose public historical archive does not preserve a fixed D-1 lead time.
 
-Three point forecasts are evaluated on a strict expanding-window experiment
+Four point forecasts are evaluated on a strict expanding-window experiment
 covering \OOSDays{} delivery days and \OOSObservations{} hourly prices.  Models
 are refitted every seven days, and all observations from a local delivery day
 remain in the same train or test block.  The weekly naive forecast obtains an
-MAE of \NaiveMAE{} EUR/MWh, Ridge obtains \RidgeMAE{}, and deterministic
-LightGBM obtains \PrimaryMAE{} with a delivery-day block-bootstrap 95\%
+MAE of \NaiveMAE{} EUR/MWh, pooled Ridge obtains \RidgeMAE{}, a 24-model
+hourly Ridge obtains \HourlyRidgeMAE{}, and deterministic LightGBM obtains
+\PrimaryMAE{} with a seven-day moving-block bootstrap 95\%
 interval of [\PrimaryMAELow{}, \PrimaryMAEHigh{}].  The corresponding
-improvements are \SkillNaive{} relative to the naive model and \SkillRidge{}
-relative to Ridge.  Daily absolute-loss differentials remain significant
-under a seven-lag heteroskedasticity- and autocorrelation-consistent variance
-estimate.  Feature-family ablations show that removing day-ahead renewables
+improvement is \SkillHourlyRidge{} relative to the strongest linear baseline.
+Daily absolute-loss differentials remain significant under a seven-lag
+heteroskedasticity- and autocorrelation-consistent variance estimate with a
+Harvey--Leybourne--Newbold finite-sample correction. Feature-family ablations
+show that removing day-ahead renewables
 raises MAE by \NoRenewablesDelta{}, whereas adding the ambiguous-vintage
 weather proxy changes MAE by only \WeatherDelta{}.
 
 Uncertainty is reported rather than inferred from point accuracy.  A
 strictly prequential, rolling-residual interval achieves
 \ConformalCoverage{} empirical coverage against a 90\% nominal target, with
-mean width \ConformalWidth{} EUR/MWh.  Coverage nevertheless falls below the
-target during several daylight and evening hours, and tail diagnostics show
-that MAE reaches \NegativeMAE{} on negative-price hours and \HighMAE{} above
-200 EUR/MWh.  A separate prompt-proxy experiment maps next-day baseload fair
-value into directional front-week views.  At the declared threshold it
-contains \SignalActive{} evaluable active days, a \SignalHit{} hit rate, and a
-mean signed spread of \SignalCaptured{} EUR/MWh; moving-block intervals are
-reported.  This last experiment is descriptive and is not presented as
-tradable P\&L because the prompt input is a trailing day-ahead proxy rather
-than a licensed forward settlement.
+mean width \ConformalWidth{} EUR/MWh.  This marginal result masks a formal
+hour-conditional failure: \ConditionalSignificantHours{} of 24 hours differ
+from nominal coverage under an unadjusted normal test and
+\ConditionalHolmHours{} remain significant after Holm correction. Tail
+diagnostics show that MAE reaches \NegativeMAE{} on negative-price hours and
+\HighMAE{} above 200 EUR/MWh. A separate prompt-proxy experiment is explicitly
+bounded by no-signal, naive, linear-model, and infeasible perfect-day
+references. It carries direction beyond weekly persistence, but much of its
+raw \SignalHit{} hit rate is mechanical. It is not presented as tradable P\&L.
 
 The contribution is methodological rather than a claim of market dominance:
 the repository binds every table and figure to frozen CSV evidence, exposes
@@ -127,8 +129,8 @@ The study is organized around five questions.
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
   \item Can a compact nonlinear model improve materially on a weekly naive
-  forecast and a regularized linear baseline over a complete out-of-sample
-  year?
+  forecast, a pooled regularized linear baseline, and a stronger 24-model
+  hourly Ridge baseline over a complete out-of-sample year?
   \item Does the apparent improvement survive delivery-day uncertainty
   intervals and autocorrelation-robust loss-differential tests?
   \item Which feature families account for the improvement, and does a
@@ -146,13 +148,15 @@ The artifact makes six concrete contributions.
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
   \item It publishes a complete one-year, hourly expanding-window experiment
-  with three baselines under a shared information set.
+  with three baselines, including 24 delivery-hour Ridge models, under a
+  shared information set.
   \item It treats the local delivery day, not the individual hour, as the
   primary dependence block for confidence intervals and loss comparisons.
   \item It separates a defensible D-1 primary feature set from a weather
   sensitivity whose archive does not preserve a fixed day-ahead vintage.
   \item It reports deterministic feature-family ablations, regime-specific
-  errors, extreme-price detection rates, and prequential interval coverage.
+  errors, extreme-price detection rates, and a formal map of conditional
+  interval failure.
   \item It corrects right-censoring in the prompt-proxy evaluation and applies
   a fourteen-day moving-block bootstrap to overlapping forward-week outcomes.
   \item It distributes source code, tests, frozen evidence, vector figures,
@@ -162,7 +166,7 @@ The artifact makes six concrete contributions.
 No claim is made that LightGBM is the best available DE-LU model, that the
 sample spans all market regimes, or that the prompt-proxy results are
 monetizable.  The narrower claim is that the declared implementation
-outperforms its two declared baselines on this declared sample, and that the
+outperforms its three declared baselines on this declared sample, and that the
 repository exposes enough evidence to assess that claim.
 
 \section{Market setting and related work}
@@ -206,8 +210,11 @@ renewable output can be state-dependent, hour effects are not smooth across
 the entire day, and a fixed linear slope may miss interactions between recent
 price levels and the day-over-day renewable change.  This flexibility does
 not remove the need for a strong linear comparison.  Indeed, the Ridge
-baseline is particularly informative in negative-price hours, where the
-nonlinear model is not uniformly superior.
+comparison includes both a pooled specification and one model per delivery
+hour, following the hour-specific structure common to strong linear
+electricity-price benchmarks \cite{lago2021}. It remains deliberately smaller
+than full LEAR because the available feature set omits load, fuel, and
+neighboring-market lags.
 
 \subsection{Evaluation and uncertainty}
 
@@ -217,8 +224,13 @@ from evidence that the difference is persistent.  Diebold and Mariano
 twenty-four prices of a day are jointly determined and adjacent days remain
 dependent, this study first aggregates absolute error by delivery day, then
 uses a Newey--West long-run variance estimate \cite{newey1987}.  Confidence
-intervals for MAE resample entire daily summaries rather than individual
-hours.
+intervals for MAE use seven-day moving blocks of daily summaries
+\cite{kunsch1989}, rather than treating adjacent days as independent.
+Forecast comparisons share information sets and the weekly naive prediction
+also enters the larger models as a feature. Standard equal-accuracy
+asymptotics are therefore interpreted cautiously in light of nested-model
+results \cite{clarkwest2007}; the reported daily test applies the
+Harvey--Leybourne--Newbold finite-sample correction \cite{harvey1997}.
 
 Point forecasts alone do not describe operational risk.  Conformal methods
 can wrap a point predictor with residual-based intervals, but standard
@@ -227,7 +239,8 @@ dependent, nonstationary time series.  Methods designed for dynamic sequences
 make this limitation explicit \cite{xu2021}.  The interval in this paper is
 therefore described as \emph{prequential}: it uses only earlier residuals and
 reports empirical coverage.  It is not presented as an exact distribution-free
-guarantee under arbitrary temporal dependence.
+guarantee under arbitrary temporal dependence. Adaptive conformal methods
+provide a natural extension under distribution shift \cite{gibbs2021}.
 
 \section{Data and information-set audit}
 
@@ -236,7 +249,11 @@ guarantee under arbitrary temporal dependence.
 Table~\ref{tab:data} summarizes the frozen inputs.  Prices and day-ahead
 renewable forecasts are obtained through the Fraunhofer ISE Energy-Charts API
 \cite{energycharts}.  The API explicitly exposes DE-LU day-ahead prices and a
-public-power-forecast endpoint.  Fifteen-minute prices, when present, are
+public-power-forecast endpoint; the ingestion request fixes
+\texttt{forecast\_type=day-ahead}, and the archived response is treated as the
+TSO day-ahead product named by that endpoint. This source label is a necessary
+information-vintage assumption, not an independently observed issue
+timestamp. Fifteen-minute prices, when present, are
 averaged to an hourly equivalent.  Wind-onshore and wind-offshore forecasts
 are summed.  Solar remains separate and is also included in total forecast
 renewables.
@@ -302,8 +319,12 @@ per-column null shares, physical ranges, extreme price changes, constant-value
 runs, and local daylight-saving day lengths.  The frozen dataset has zero
 missing hours, zero duplicate timestamps, no declared range violation, and no
 local day outside 23/24/25 hours after excluding partial endpoints.  Two
-weather observations are initially missing, but they occur before the maximum
-price lag has formed and do not enter the modeled sample.
+weather observations are initially missing. The primary sample is formed by
+dropping missing values only from the seventeen primary features and target;
+weather completeness is imposed separately for the weather sensitivity.
+Consequently, optional weather availability cannot condition the primary
+estimation sample. In this frozen dataset the two samples nevertheless retain
+the same 8,760 out-of-sample rows.
 
 Figure~\ref{fig:history} shows daily mean prices and the count of negative
 hours.  The sample includes calm and volatile periods, but it is not a
@@ -344,6 +365,11 @@ provides a simple ramp indicator.  It is an input forecast difference, not a
 realized generation change.  All continuous quantities are left in natural
 units for the tree model.  Ridge is fitted inside a
 standardization pipeline so its penalty does not depend on units.
+The integer hour, weekday, and month fields are intentionally available to
+LightGBM as ordered split variables; cyclic sine/cosine hour terms represent
+the midnight boundary. This compact treatment avoids estimating sparse
+categories in the short initial window, but it restricts calendar partitions
+to contiguous integer groups and is therefore listed as model risk.
 
 \subsection{Models}
 
@@ -366,6 +392,13 @@ Ridge estimates
 The penalty is fixed before the reported out-of-sample window.  No
 hyperparameter selection uses test losses.
 
+The stronger linear benchmark fits the same standardized Ridge specification
+separately for each of the 24 local delivery-hour labels. DST duplicate hours
+share the same hour-specific model. This adds intraday coefficient flexibility
+without using test outcomes or introducing a hyperparameter search. It is
+LEAR-like in hourly structure, but it is not the full high-dimensional LEAR
+benchmark of \cite{lago2021}.
+
 LightGBM estimates an additive tree model
 \[
   \widehat f_M(x)=\sum_{m=1}^{M}\nu h_m(x),
@@ -383,6 +416,12 @@ $D_i$, the training set contains every feature row with local date strictly
 less than $D_i$.  Models are re-estimated when $i\equiv1\pmod 7$ and reused
 for the next six delivery days.  The entire day, including a DST transition,
 is predicted as one test block.
+
+The design is intentionally test-heavy: 365 local days are reserved for
+evaluation, while the first forecast is trained on
+\InitialTrainingDays{} complete feature days. The initial model has not seen
+a full prior annual cycle. To expose possible cold-start effects, the paper
+also reports LightGBM MAE after excluding the first 90 test days.
 
 \begin{proposition}[No target leakage through the split]
 If each primary feature for delivery day $d$ is measurable before the D-1
@@ -419,10 +458,10 @@ does not square the already influential spikes.  RMSE and the 95th percentile
 of absolute error retain information about tails.
 
 For uncertainty in MAE, the code first computes a mean absolute error for each
-local delivery day and resamples the 365 daily values with replacement 4,000
-times.  The 2.5 and 97.5 percentiles form the reported interval.  This
-preserves within-day dependence but treats days as exchangeable for the
-bootstrap; the resulting interval should not be read as robust to arbitrary
+local delivery day and resamples overlapping seven-day blocks of the 365 daily
+values 4,000 times \cite{kunsch1989}. The 2.5 and 97.5 percentiles form the
+reported interval. This preserves within-day dependence and short inter-day
+dependence aligned with the HAC lag; it remains unable to reproduce arbitrary
 long regime shifts.
 
 \subsection{Loss-differential test}
@@ -443,10 +482,14 @@ Newey--West standard error with Bartlett weights and lag seven:
   \qquad
   t=\frac{\bar\delta}{\sqrt{\widehat\Omega/n_d}}.
 \]
-This is a Diebold--Mariano-style comparison on daily $L_1$ loss.  The
-$t$ reference distribution and fixed lag are approximations, so exact
-$p$-values should not be interpreted more finely than their overwhelming
-order of magnitude.
+The statistic is multiplied by the Harvey--Leybourne--Newbold small-sample
+factor for a one-day forecast horizon \cite{harvey1997}. This remains a
+Diebold--Mariano-style comparison on daily $L_1$ loss. The weekly naive
+forecast is also an input feature, so that comparison shares the nested-model
+problem studied by \cite{clarkwest2007}; Clark--West's squared-error adjustment
+does not transfer directly to the primary absolute-error loss. The fixed HAC
+lag and reference distribution remain approximations, and $p$-values are
+strength-of-evidence diagnostics rather than exact finite-sample tests.
 
 \subsection{Prequential intervals}
 
@@ -465,7 +508,10 @@ using the higher empirical quantile, and reports
 The coefficients of the point model are not refitted by the interval wrapper.
 The construction is strictly prequential in residual time but pools all hours
 into one radius.  Hour-specific coverage therefore remains an essential
-diagnostic.
+diagnostic. Alongside coverage and width, the artifact reports the proper
+central interval score and two endpoint pinball losses \cite{gneiting2007}.
+Hour-by-hour two-sided binomial tests are reported both unadjusted and with
+Holm multiplicity correction.
 
 \subsection{Prompt-proxy translation}
 
@@ -490,7 +536,8 @@ For direction $s_d\in\{-1,0,1\}$, the descriptive outcome is
   \right).
 \]
 The seven-day forward average creates overlapping outcomes.  A fourteen-day
-moving-block bootstrap is therefore used for the default $(w,\tau)=(7,0.75)$
+moving-block bootstrap \cite{kunsch1989} is therefore used for the default
+$(w,\tau)=(7,0.75)$
 summary.  The final six days have no complete forward outcome and are
 right-censored.  They remain available for a current view but are excluded
 from performance statistics.
@@ -500,17 +547,30 @@ from performance statistics.
 \subsection{Point accuracy}
 
 Table~\ref{tab:models} reports the full-year comparison.  LightGBM reaches an
-MAE of \PrimaryMAE{} EUR/MWh, against \RidgeMAE{} for Ridge and \NaiveMAE{}
-for the weekly naive forecast.  The primary model's RMSE is
+MAE of \PrimaryMAE{} EUR/MWh, against \HourlyRidgeMAE{} for hourly Ridge,
+\RidgeMAE{} for pooled Ridge, and \NaiveMAE{} for the weekly naive forecast.
+The primary model's RMSE is
 \PrimaryRMSE{}, larger than MAE as expected in a spiky market, and its bias is
 \PrimaryBias{} EUR/MWh.  The negative bias indicates systematic
 underprediction on average, a warning that the model should not be judged on
 MAE alone.
 
+After excluding the first 90 test days, LightGBM MAE over the remaining
+\PostWarmupDays{} days is \PostWarmupMAE{} EUR/MWh. This diagnostic separates
+the short initial training history from the headline full-year score without
+silently discarding a difficult part of the declared test.
+
+A strictly prequential intercept correction is also reported as a sensitivity,
+not substituted into the primary forecast. On the common post-calibration
+window, the uncorrected MAE and bias are \BiasWindowMAE{} and
+\BiasWindowBias{} EUR/MWh; subtracting the prior-60-day mean residual changes
+them to \BiasCorrectedMAE{} and \BiasCorrectedBias{}. This quantifies the
+available bias correction while avoiding an ex-post full-sample intercept.
+
 \begin{table}[t]
 \centering
-\caption{One-year expanding-window point-forecast accuracy.  MAE intervals
-resample complete delivery-day summaries 4,000 times.}
+\caption{One-year expanding-window point-forecast accuracy. MAE intervals use
+4,000 seven-day moving-block bootstrap draws of delivery-day summaries.}
 \label{tab:models}
 \small
 \resizebox{\textwidth}{!}{\input{generated/model_comparison_table.tex}}
@@ -519,7 +579,7 @@ resample complete delivery-day summaries 4,000 times.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{07_model_uncertainty.pdf}
-\caption{MAE and delivery-day block-bootstrap 95\% intervals.  Intervals
+\caption{MAE and seven-day moving-block bootstrap 95\% intervals. Intervals
 describe variability across this sample, not model or data-vintage risk.}
 \label{fig:model-ci}
 \end{figure}
@@ -547,16 +607,18 @@ out-of-sample hours.}
 
 \subsection{Statistical comparison and temporal stability}
 
-The daily MAE gain relative to the naive model is 19.29 EUR/MWh; relative to
-Ridge it is 3.52 EUR/MWh.  Both autocorrelation-robust tests reject a zero mean
-differential by a wide margin (Table~\ref{tab:dm}).  These results support the
+The daily MAE gain is \DMGainNaive{} EUR/MWh relative to the naive model,
+\DMGainRidge{} relative to pooled Ridge, and \DMGainHourlyRidge{} relative to
+hourly Ridge. All HLN-corrected, autocorrelation-robust tests reject a zero mean
+differential by a wide margin (Table~\ref{tab:dm}). These results support the
 within-sample statement that the gain is persistent across days, rather than
 being generated by one small group of hours.
 
 \begin{table}[t]
 \centering
-\caption{Daily absolute-loss comparisons with seven-lag HAC standard errors.
-Positive gains favor LightGBM.}
+\caption{Daily absolute-loss comparisons with seven-lag HAC standard errors
+and the Harvey--Leybourne--Newbold finite-sample correction. Positive gains
+favor LightGBM.}
 \label{tab:dm}
 \small
 \input{generated/dm_table.tex}
@@ -579,15 +641,17 @@ fuel regimes, or structural policy changes.
 
 Errors are not uniform through the day.  Figure~\ref{fig:hour} shows that
 night and late-evening hours are easier, while daylight and the evening ramp
-are harder.  The nonlinear model's MAE is 9.20 EUR/MWh during hours 00--06,
-16.28 during hours 07--15, and 15.30 during hours 16--21.  Spring has the
-largest seasonal MAE at 15.82, followed by autumn at 14.27, summer at 11.94,
-and winter at 11.39.
+are harder. The nonlinear model's MAE is \MAENight{} EUR/MWh during hours
+00--06, \MAEDaylight{} during hours 07--15,
+\MAEEveningRamp{} during hours 16--21, and \MAELateEvening{} during hours
+22--23. Spring has the largest seasonal MAE at \MAESpring{}, followed by
+autumn at \MAEAutumn{}, summer at \MAESummer{}, and winter at
+\MAEWinter{}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.84\textwidth]{04_mae_by_hour.pdf}
-\caption{MAE by local delivery hour for all three models.}
+\caption{MAE by local delivery hour for all four models.}
 \label{fig:hour}
 \end{figure}
 
@@ -627,13 +691,14 @@ Table~\ref{tab:ablation} and Figure~\ref{fig:ablation} keep the model class,
 dates, refit cadence, and hyperparameters fixed while changing feature
 families.  The weather-augmented sensitivity improves MAE by only
 \WeatherDelta{} relative to the primary model.  This small difference is
-inside the broad day-bootstrap intervals and does not justify relaxing the
+inside the broad moving-block bootstrap intervals and does not justify relaxing the
 information-vintage standard.
 
 Renewables are materially more important.  Removing them leaves price history
 and calendar variables and raises MAE by \NoRenewablesDelta{}.  A model with
-renewables and calendar variables but no lagged prices obtains MAE 17.80,
-which remains substantially better than price-history plus calendar at 25.14.
+renewables and calendar variables but no lagged prices obtains MAE
+\FundamentalsCalendarMAE{}, which remains substantially better than
+price-history plus calendar at \NoRenewablesMAE{}.
 The result suggests complementarity: recent prices establish the prevailing
 level while day-ahead renewable forecasts explain a large fraction of the
 next-day deviation.
@@ -658,7 +723,8 @@ sensitivity, not part of the primary ex-ante claim.}
 
 Aggregate improvement coexists with economically relevant failure modes.
 Table~\ref{tab:tails} divides the target into negative, regular, and
-above-200 EUR/MWh hours.  On regular hours, LightGBM obtains MAE 12.14;
+above-200 EUR/MWh hours. On regular hours, LightGBM obtains MAE
+\RegularMAE{};
 on negative hours, its MAE is \NegativeMAE{}; above 200, MAE
 is \HighMAE{}.  The high-price bias is strongly negative, reflecting
 regression toward the center.  The model predicts a value above 200 for only
@@ -668,7 +734,10 @@ Ridge slightly outperforms LightGBM on negative-price hours in MAE, while
 LightGBM is materially better in the high-price regime.  This is a useful
 counterexample to any claim of uniform dominance.  A production forecaster
 might combine models by regime, use a transformed target, add outages and
-fuel-stack variables, or train an explicit tail objective.
+fuel-stack variables, or train an explicit tail objective. Variance-stabilizing
+transformations designed for zero and negative electricity prices are a
+particularly relevant extension for these documented tails
+\cite{uniejewski2018}.
 
 \begin{table}[t]
 \centering
@@ -689,9 +758,10 @@ narrows in the far tail.}
 
 \subsection{Prequential interval performance}
 
-Across 8,040 evaluable hours after the minimum calibration period, the nominal
+Across \ConformalObservations{} evaluable hours after the minimum calibration period, the nominal
 90\% interval covers \ConformalCoverage{} of outcomes with mean width
-\ConformalWidth{} EUR/MWh.  Aggregate calibration is close to the target.
+\ConformalWidth{} EUR/MWh and mean proper interval score
+\ConformalIntervalScore{}. Aggregate calibration is close to the target.
 Figure~\ref{fig:conformal-path} illustrates how the radius adapts through the
 last fourteen days.
 
@@ -703,19 +773,23 @@ fourteen days.}
 \label{fig:conformal-path}
 \end{figure}
 
-The aggregate number conceals intraday miscalibration.
-Figure~\ref{fig:coverage-hour} shows coverage near 95--97\% overnight and late
-in the evening, but 84--89\% for many daylight hours.  A common radius is too
-wide in easy hours and too narrow in difficult hours.  Hour-conditional
-residual pools, quantile regression, or a dynamic conformal method are
-natural extensions.  Because the time series is nonexchangeable, the reported
-empirical rate remains a descriptive validation result rather than a
-finite-sample coverage theorem.
+The aggregate number conceals a formal conditional-coverage failure.
+\ConditionalSignificantHours{} of the 24 hourly coverages differ from 90\%
+under two-sided normal tests at 5\%:
+\ConditionalUnderHours{} under-cover and \ConditionalOverHours{} over-cover.
+After Holm correction across the 24 tests, \ConditionalHolmHours{} remain
+significant. A common radius is too wide in easy hours and too narrow in
+difficult hours. Hour-conditional residual pools, quantile regression, or an
+adaptive conformal method \cite{gibbs2021} are natural extensions. Because the
+time series is nonexchangeable, the marginal empirical rate remains a
+descriptive validation result rather than a conditional or finite-sample
+coverage theorem.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.84\textwidth]{11_conformal_coverage.pdf}
-\caption{Empirical interval coverage by local delivery hour.}
+\caption{Empirical interval coverage by local delivery hour. Marginal
+calibration masks widespread conditional rejection of the 90\% target.}
 \label{fig:coverage-hour}
 \end{figure}
 
@@ -738,12 +812,30 @@ generated directions.  This is not an EEX forward backtest.}
 \label{fig:prompt}
 \end{figure}
 
-Sensitivity matters.  Raising the threshold generally increases the observed
-hit rate and magnitude while sharply reducing the sample.  For the seven-day
-proxy, the active count falls from 200 near threshold 0.5 to about
-twenty near threshold 2.0.  The best-looking ex-post cell is therefore not
-evidence for an optimized live threshold.  The value 0.75 is retained because
-it was declared in the prototype before this expanded analysis.
+Table~\ref{tab:signal-bounds} bounds the raw result. Always-long and weekly
+naive references quantify simple persistence. Pooled and hourly Ridge show how
+much of the direction survives a materially weaker point forecaster, while
+perfect knowledge of day-D baseload is an infeasible upper bound for this
+particular construction. LightGBM carries direction beyond weekly persistence,
+but the proximity of the linear and perfect-information rows shows that much
+of the headline hit rate is mechanical: day D enters the forward-week average
+and the prompt spread is autocorrelated. This is evidence of directional
+information, not model-specific alpha.
+
+\begin{table}[t]
+\centering
+\caption{Bounds for the declared seven-day, $|z|>0.75$ prompt diagnostic.
+Mean spread is signed EUR/MWh. ``Perfect day-D'' is deliberately infeasible.}
+\label{tab:signal-bounds}
+\small
+\resizebox{\textwidth}{!}{\input{generated/signal_benchmark_table.tex}}
+\end{table}
+
+Sensitivity matters. Raising the threshold generally increases the observed
+hit rate and magnitude while sharply reducing the sample. The best-looking
+ex-post cell is therefore not evidence for an optimized live threshold. The
+value 0.75 is retained because it was declared in the prototype before this
+expanded analysis.
 
 \begin{table}[t]
 \centering
@@ -769,15 +861,18 @@ outcomes overlap and are descriptive only.}
 The strongest conclusion is comparative and local.  Under one fixed
 implementation, a complete OOS year, and the declared D-1 feature set,
 LightGBM materially reduces absolute error relative to a weekly naive model
-and Ridge.  The improvement appears through the year, survives daily
-dependence adjustments, and is not explained by the ambiguous-vintage weather
-series.  Renewable forecasts are a central source of skill.
+and both Ridge specifications. The improvement appears through the year,
+survives daily dependence adjustments, and is not explained by the
+ambiguous-vintage weather series. Renewable forecasts are a central source of
+skill.
 
 The artifact also shows why an MAE headline is insufficient.  The primary
 model is negatively biased, its daytime interval coverage is weak, and its
 error increases sharply in negative and high-price regimes.  Ridge is
 competitive on negative prices.  These facts are not ancillary; they define
-the operational boundary of the model.
+the operational boundary of the model. Likewise, the prompt diagnostic exceeds
+weekly persistence but is largely shaped by its overlapping arithmetic rather
+than unique LightGBM alpha.
 
 \subsection{What the evidence does not support}
 
@@ -832,6 +927,10 @@ The repository is divided into seven executable stages:
   directly from the frozen outputs.
 \end{enumerate}
 
+Tabular transformations use pandas \cite{mckinney2010}; standardized Ridge,
+metrics, and preprocessing use scikit-learn \cite{pedregosa2011}. These
+software dependencies are pinned in the paper environment.
+
 The optional language-model component writes a short desk note from
 pipeline-computed numbers.  It is excluded from every scientific result.  Its
 dry-run mode logs the exact prompt without credentials or a network call.  No
@@ -857,9 +956,14 @@ Feature-family contribution & \texttt{research.py} &
 Regime and tail errors & \texttt{research.py} &
 \texttt{regime\_metrics.csv}, \texttt{tail\_metrics.csv} \\
 Prequential coverage & \texttt{research.py} &
-\texttt{conformal\_diagnostics.csv} \\
-Prompt-proxy sensitivity & \texttt{trading.py}, \texttt{research.py} &
-\texttt{daily\_views.csv}, \texttt{signal\_sensitivity.csv} \\
+\texttt{conformal\_diagnostics.csv},
+\texttt{conformal\_hour\_tests.csv} \\
+Bias sensitivity & \texttt{research.py} &
+\texttt{bias\_correction\_diagnostics.csv} \\
+Prompt-proxy sensitivity and bounds & \texttt{trading.py},
+\texttt{research.py} &
+\texttt{daily\_views.csv}, \texttt{signal\_sensitivity.csv},
+\texttt{signal\_benchmarks.csv} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -871,11 +975,13 @@ that a reported paper was built from the intended frozen state.
 
 \subsection{Tests and deterministic controls}
 
-The test suite checks price-lag direction, QA invariants, the sign convention
-of the HAC comparison, strictly prior conformal calibration, the exact
-365-day OOS shape, prompt right-censoring, equality between primary ablation
-and frozen model predictions, coverage reconciliation, dataset hashing, and
-the presence of all fourteen vector figures.
+The test suite checks price-lag direction, independent primary/weather sample
+conditioning, QA invariants, the HLN/HAC sign convention, seeded moving-block
+resampling, strictly prior conformal calibration, the exact 365-day OOS shape,
+all four forecast columns, prompt right-censoring and benchmark bounds,
+equality between primary ablation and frozen model predictions, conditional
+coverage reconciliation, dataset hashing, and the presence of all fourteen
+vector figures.
 
 LightGBM uses an explicit seed and deterministic training mode.  Bootstrap
 generators use fixed seeds.  Exact floating-point equality across operating
@@ -890,7 +996,9 @@ evidence make such differences visible.
   \item \textbf{Sample length.}  The dataset spans roughly twenty-one months
   and the test covers one year.  Lago et al. \cite{lago2021} advocate longer
   multi-year evaluation.  This artifact does not cover multiple energy
-  crises, policy regimes, or fuel cycles.
+  crises, policy regimes, or fuel cycles. More than half of the raw local days
+  are reserved for testing, leaving only \InitialTrainingDays{} complete
+  feature days before the first forecast and no full prior annual cycle.
 
   \item \textbf{Upstream revisions.}  The local code enforces chronological
   splits, but an upstream API may revise historical forecasts.  Raw response
@@ -909,20 +1017,25 @@ evidence make such differences visible.
   \item \textbf{Model selection.}  Hyperparameters are fixed rather than
   selected in a nested time-series validation.  That reduces researcher
   degrees of freedom but does not prove the chosen values are optimal.
+  Calendar integers are treated as ordered tree-split variables; cyclic hour
+  terms help, but noncontiguous weekday or month groupings are unavailable.
 
-  \item \textbf{Intervals.}  The symmetric pooled conformal radius assumes
-  neither hour-specific scale nor asymmetric tails.  Aggregate coverage near
-  90\% coexists with conditional undercoverage, and temporal dependence
-  prevents a naive exchangeability guarantee.
+  \item \textbf{Intervals.} The symmetric pooled conformal radius assumes
+  neither hour-specific scale nor asymmetric tails. Aggregate coverage near
+  90\% coexists with formal hour-conditional rejection, and temporal
+  dependence prevents a naive exchangeability guarantee.
 
-  \item \textbf{Significance.}  The HAC lag, day bootstrap, and reference
-  distribution are modeling choices.  Extremely small $p$-values indicate
-  strong sample evidence, not an immutable population ranking.
+  \item \textbf{Significance.} The HAC lag, seven-day moving-block bootstrap,
+  HLN adjustment, and reference distribution are modeling choices. The naive
+  forecast is nested in the feature set, while the primary loss is absolute
+  rather than squared error. Extremely small $p$-values indicate strong sample
+  evidence, not an immutable population ranking.
 
   \item \textbf{Prompt proxy.}  A trailing day-ahead mean is not a forward
   settlement and contains no explicit risk premium.  Overlapping forward-week
-  outcomes, missing costs, and threshold exploration preclude a trading
-  performance claim.
+  outcomes, mechanical persistence, missing costs, and threshold exploration
+  preclude a trading performance claim. Similar Ridge and LightGBM hit rates
+  show that the raw success rate is not model-specific alpha.
 
   \item \textbf{Interpretability.}  Split-count importance is unstable under
   correlated features and is not causal.  Ablations are more informative but
@@ -939,25 +1052,28 @@ evidence make such differences visible.
 This paper presents a reproducible DE-LU day-ahead forecasting artifact that
 treats information timing and uncertainty as first-class research objects.
 On a complete out-of-sample year, the primary LightGBM model obtains
-\PrimaryMAE{} EUR/MWh MAE and improves on both a weekly naive model and Ridge.
-The gain is stable across the sample and significant under a daily
-autocorrelation-robust comparison.  Renewable forecasts account for a large
-share of predictive value.  The more permissive weather variant changes MAE
-only marginally and is excluded from the primary claim because its archive
-does not preserve a fixed D-1 vintage.
+\PrimaryMAE{} EUR/MWh MAE and improves on a weekly naive model, pooled Ridge,
+and the stronger hourly Ridge baseline. The gain is stable across the sample
+and significant under an HLN-corrected daily autocorrelation-robust
+comparison. Renewable forecasts account for a large share of predictive value.
+The more permissive weather variant changes MAE only marginally and is
+estimated on its own complete-case sample because its archive does not
+preserve a fixed D-1 vintage.
 
-The same evidence also limits the conclusion.  Error remains large in
-negative and above-200 price regimes, daytime intervals undercover, and the
-sample covers one recent year rather than multiple structural regimes.  The
-prompt-proxy experiment is statistically transparent but not a forward-market
+The same evidence also limits the conclusion. Error remains large in negative
+and above-200 price regimes; marginal 90\% interval coverage masks rejection
+across many delivery hours; and the sample covers one recent year with a short
+initial training history rather than multiple structural regimes. The
+prompt-proxy experiment is bounded by persistence and perfect-information
+references and is shown to be partly mechanical, not a forward-market
 backtest.
 
 The result is therefore best viewed as a publication-ready foundation:
 source-backed, testable, and explicit about what remains unknown.  Extending
 the data to multiple years, introducing fixed-vintage weather, load, outages,
 fuel, carbon, and interconnector inputs, and evaluating conditional
-probabilistic forecasts would turn that foundation into a broader empirical
-study.
+probabilistic forecasts, variance-stabilized targets, and a full LEAR
+implementation would turn that foundation into a broader empirical study.
 
 \clearpage
 \appendix
@@ -1010,10 +1126,11 @@ window, seven-day refit cadence.
   \item For test day $D_i$, set the training mask to every row whose local day
   is strictly earlier than $D_i$.
   \item When $i$ is the first day of a seven-day block, fit standardized Ridge
-  and deterministic LightGBM on the training mask.
+  pooled across hours, 24 standardized hour-specific Ridge models, and
+  deterministic LightGBM on the training mask.
   \item Predict every 23/24/25 target hour of $D_i$ with the same fitted
   models; copy the 168-hour lag as the naive prediction.
-  \item Append timestamp, target, and all three predictions without shuffling.
+  \item Append timestamp, target, and all four predictions without shuffling.
   \item After the final day, compute metrics and save the exact prediction
   matrix to CSV.
 \end{enumerate}
@@ -1047,7 +1164,8 @@ $1-\alpha=0.90$, 60-day residual window, 30-day minimum.
   \item Repeat the complete walk-forward procedure separately for each set.
   \item Reconcile the primary ablation predictions exactly with the frozen
   main-model column.
-  \item Compute metrics and delivery-day bootstrap intervals for every set.
+  \item Compute metrics and seven-day moving-block bootstrap intervals for
+  every set.
 \end{enumerate}
 
 \textbf{Output:} \texttt{data/ablation\_predictions.csv} and
@@ -1076,8 +1194,9 @@ $1-\alpha=0.90$, 60-day residual window, 30-day minimum.
 
 Table~\ref{tab:regimes} in the main paper reports season and hour blocks.
 The complete machine-readable table additionally includes renewable
-quartiles and all three models.  For the primary model, MAE is 13.82, 9.98,
-12.48, and 18.09 EUR/MWh across increasing renewable quartiles.  The
+quartiles and all four models. For the primary model, MAE is
+\RenewableQOneMAE{}, \RenewableQTwoMAE{}, \RenewableQThreeMAE{}, and
+\RenewableQFourMAE{} EUR/MWh across increasing renewable quartiles. The
 high-renewable quartile is the most difficult, consistent with greater risk
 of saturation and negative-price conditions.
 
@@ -1104,10 +1223,13 @@ Dataset grid & Complete UTC hours & Zero missing and duplicate timestamps \\
 DST mapping & Local day length & Every full day has 23, 24, or 25 hours \\
 Feature timing & Price lags & Exact 24/48/168-hour backward mapping \\
 Walk-forward split & Test horizon & 365 local days, 8,760 rows \\
+Linear benchmark & Hour-specific fit & 24 Ridge models, refit every seven days \\
 Primary ablation & Evidence reconciliation & Exact equality with main
 LightGBM predictions \\
+Primary sample & Optional weather & Primary row inclusion independent of weather \\
 Conformal order & Prequentiality & Future target perturbation cannot change
 earlier radii \\
+Conditional coverage & Hour tests & Raw and Holm-adjusted counts reconcile \\
 Trading evaluation & Right-censoring & Incomplete D through D+6 outcomes
 excluded \\
 Paper figures & Vector outputs & One nonempty PDF for each of 14 figures \\
