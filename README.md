@@ -1,18 +1,21 @@
 # Quantitative Finance — Personal Projects
 
 > **Bathaix Philippe-Emmanuel Yao**
-> MSc Financial Mathematics · London School of Economics 
+> MSc Financial Mathematics · London School of Economics
 > MSc Data Science · University of Essex · FRM
 > 📍 London · [LinkedIn](https://www.linkedin.com/) · yaophilippeemmanuel@gmail.com
 
 ---
 
-A curated portfolio of quantitative finance projects spanning **rates and IR
-derivatives**, **systematic trading**, **commodities**, **volatility
-modelling**, and **risk / XVA**. The emphasis throughout is on the things that
-distinguish desk-ready work from a notebook: **point-in-time discipline,
-realistic costs, model validation against independent benchmarks, and
-production-grade code (tests + CI).**
+A curated portfolio of quantitative finance projects with a common thread:
+**building models and independently validating them**. Every flagship project
+is benchmarked against an independent reference (QuantLib, Monte Carlo,
+analytic solutions), ships with a documented error budget and explicit
+limitations, and treats risk controls — realistic costs, point-in-time
+discipline, stress testing, backtest honesty — as first-class requirements
+rather than afterthoughts. Coverage spans **counterparty credit & XVA**,
+**market and credit risk**, **rates and IR derivatives**, **systematic
+trading**, **commodities** and **volatility modelling**.
 
 A subset of these projects are built as standalone, installable packages with
 unit tests and continuous integration — marked **🟢 production-grade** below.
@@ -20,23 +23,79 @@ The rest are research notebooks and prototypes.
 
 ---
 
-## 🔑 Start Here — Flagship Projects
+## 🎯 Risk & Model Validation Highlights
 
-> Six desk-oriented projects spanning rates, systematic research, commodities,
-> power and counterparty risk. If you review only a few projects, review these.
+> The projects most relevant to credit, counterparty and model risk. If you
+> are reviewing this portfolio from a risk perspective, start here.
+
+- **[XVA Pricing Engine — Interest Rate Swaps](./Rates%20and%20IR%20Derivatives/XVA%20Pricing%20Engine%20-%20Interest%20Rate%20Swaps)** —
+  counterparty credit risk end to end: EPE/ENE exposure simulation under
+  Hull-White, CVA/DVA/FVA, wrong-way risk, netting-set aggregation and SIMM
+  capital.
+- **[Quadrature-order Requirements for G2++ Swaption Pricing (SSRN, 2026)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7211484)** —
+  a reproducible **model-validation study**: a predeclared 135-cell test grid,
+  two independent reference engines (QuantLib and Monte Carlo), and a full
+  error budget for a pricing approximation. The companion C++20 artifact
+  regenerates every table and figure.
+- **[Risk Forecasting — VaR & Expected Shortfall](#risk--credit)** —
+  historical, parametric and GARCH VaR/ES with EVT tails, and formal Kupiec /
+  Christoffersen backtesting.
+- **[Merton Structural Credit Model](#risk--credit)** — distance-to-default,
+  PD extraction and portfolio loss analysis.
+- **[Credit Risk Modelling](#risk--credit)** — logistic-regression and ML PD
+  models with ROC/AUC/KS evaluation.
+- **[Multi-Asset Portfolio Risk Terminal](#risk--credit)** — VaR/CVaR,
+  historical stress scenarios (2008, COVID, rate-hike, stagflation) and factor
+  attribution in an interactive dashboard.
+
+---
+
+## 🔑 Flagship Projects
+
+> Six desk-oriented projects spanning counterparty risk, rates, systematic
+> research, commodities and power.
 
 | Project | Asset Class | What makes it desk-relevant | Status |
 |---|---|---|---|
+| [XVA Pricing Engine](./Rates%20and%20IR%20Derivatives/XVA%20Pricing%20Engine%20-%20Interest%20Rate%20Swaps) | Credit / Counterparty | CVA / DVA / FVA on IR swaps; exposure simulation under Hull-White, wrong-way risk, netting-set aggregation, SIMM capital | Engine + analysis |
 | [qf-rates — Rates Pricing & Risk Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/qf-rates) | Rates | C++20 library covering curves, swaps, Black-76/Bachelier, G2++, European and Bermudan swaptions, calibration, Monte Carlo, LSM, DV01, volatility scenarios and XVA; independently **validated against QuantLib and Monte Carlo** | 🟢 package + tests + CI |
 | [Systematic Research — Point-in-Time Research Library](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/systematic-research) | Systematic | Python research framework with **point-in-time data**, survivorship-bias controls, realistic costs and market impact, walk-forward validation, PSR/DSR, capacity, attribution and deterministic experiment tracking | 🟢 package + tests + CI |
 | [Commodity Price Modeling & Trading](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/Commodity%20price%20modelling) | Energy Commodities | Schwartz, Schwartz–Smith and three-factor models; futures-curve calibration by Kalman filtering, jump diffusion, Monte Carlo and strictly out-of-sample WTI/Brent and calendar-spread research | Research pipeline |
 | [Commodity Trading Signal Generator](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/Commodity%20signal%20generator) | Systematic Commodities | Five point-in-time signals across 15 futures, ex-ante volatility targeting, turnover controls, transaction costs, live carry analytics and honest regime-by-regime attribution | 🟢 tests |
 | [European Power Fair Value](https://github.com/philippeyao123/PERSONAL-PROJECTS/tree/main/Commodity/European%20Power%20Fair%20Value) | European Power | Leakage-controlled DE-LU day-ahead hourly forecasting using weather and TSO fundamentals; walk-forward LightGBM, prompt-curve views, automated QA and audited LLM commentary | Pipeline + QA |
-| [XVA Pricing Engine](./Rates%20and%20IR%20Derivatives/XVA%20Pricing%20Engine%20-%20Interest%20Rate%20Swaps) | Credit / Counterparty | CVA / DVA / FVA on IR swaps; exposure simulation under Hull-White, wrong-way risk, netting-set aggregation, SIMM capital | Engine + analysis |
 
 ---
 
 ## 📂 Full Project Index
+
+### Risk & Credit
+
+#### XVA Pricing Engine — Interest Rate Swaps
+CVA, DVA and FVA for vanilla IR swaps. Exposure (EPE/ENE) simulation under
+Hull-White, wrong-way risk, netting-set aggregation, and SIMM capital.
+`CVA · DVA · FVA · Wrong-way risk · Exposure simulation · SIMM`
+
+#### Risk Forecasting — VaR & Expected Shortfall
+Historical, parametric and GARCH VaR/ES; EVT tail estimation; Kupiec and
+Christoffersen backtesting under volatility clustering.
+`VaR · ES · GARCH · EVT · Kupiec · Christoffersen`
+
+#### Merton Structural Credit Model
+Firm-value model, distance-to-default, PD extraction, portfolio loss and
+term-structure analysis.
+`Merton · Distance-to-default · Structural credit`
+
+#### Credit Risk Modelling
+Logistic-regression and ML PD models with ROC/AUC/KS evaluation.
+`PD modelling · Scorecard · Classification`
+
+#### Multi-Asset Portfolio Risk Terminal (Baraka App)
+Michaud resampling (500 iterations), Monte Carlo (10,000 paths), historical
+stress scenarios (2008, COVID, rate-hike, stagflation), VaR/CVaR, diversification
+ratio and factor attribution. Deployed as an interactive Streamlit dashboard.
+`Michaud resampling · Monte Carlo · Stress testing · VaR/CVaR · Streamlit`
+
+---
 
 ### 🟢 Rates & IR Derivatives
 
@@ -53,14 +112,11 @@ DV01, vega, curve and volatility scenarios, exposure simulation, netting,
 wrong-way risk and simplified CVA/DVA/FVA/SIMM/MVA. Python bindings expose the
 principal pricing and risk workflow. Vanilla swaps match QuantLib to machine
 precision, the G2++ European price is within 1%, and calibration is
-cross-checked against an independent QuantLib implementation.
+cross-checked against an independent QuantLib implementation. The validation
+methodology is written up in a companion paper:
+[Quadrature-order Requirements for G2++ Swaption Pricing (SSRN)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7211484).
 
 `C++20 · CMake · G2++ · Bachelier · Monte Carlo · LSM · DV01 · XVA · pybind11 · QuantLib`
-
-#### XVA Pricing Engine — Interest Rate Swaps
-CVA, DVA and FVA for vanilla IR swaps. Exposure (EPE/ENE) simulation under
-Hull-White, wrong-way risk, netting-set aggregation, and SIMM capital.
-`CVA · DVA · FVA · Wrong-way risk · Exposure simulation · SIMM`
 
 #### Hull-White One-Factor Model
 Hull-White calibration to the yield curve; Bermudan swaption pricing via PDE
@@ -87,7 +143,6 @@ software versions. The package supports Python 3.9–3.12 and ships with 40 test
 more than 80% branch coverage, Ruff, mypy and CI.
 
 `Python · Point-in-time data · PSR/DSR · IC/IR · Capacity · Walk-forward · pytest · mypy`
-
 
 #### Volatility Arbitrage — Implied vs Realised
 Implied–realised spread strategy with delta-hedged gamma positions and P&L
@@ -174,7 +229,6 @@ quantitative values.
 
 ---
 
-
 ### Exotic & Structured Products Pricing
 
 #### FX Options Pricing Engine
@@ -205,30 +259,6 @@ surface/heatmap construction with arbitrage checks.
 Neural-network approximation of prices and Greeks, benchmarked against analytic
 and Monte Carlo baselines.
 `Neural networks · Option pricing · Greeks`
-
----
-
-### Risk & Credit
-
-#### Risk Forecasting — VaR & Expected Shortfall
-Historical, parametric and GARCH VaR/ES; EVT tail estimation; Kupiec and
-Christoffersen backtesting under volatility clustering.
-`VaR · ES · GARCH · EVT · Kupiec · Christoffersen`
-
-#### Merton Structural Credit Model
-Firm-value model, distance-to-default, PD extraction, portfolio loss and
-term-structure analysis.
-`Merton · Distance-to-default · Structural credit`
-
-#### Credit Risk Modelling
-Logistic-regression and ML PD models with ROC/AUC/KS evaluation.
-`PD modelling · Scorecard · Classification`
-
-#### Multi-Asset Portfolio Risk Terminal (Baraka App)
-Michaud resampling (500 iterations), Monte Carlo (10,000 paths), historical
-stress scenarios (2008, COVID, rate-hike, stagflation), VaR/CVaR, diversification
-ratio and factor attribution. Deployed as an interactive Streamlit dashboard.
-`Michaud resampling · Monte Carlo · Stress testing · VaR/CVaR · Streamlit`
 
 ---
 
